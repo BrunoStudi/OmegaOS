@@ -1,128 +1,206 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
+
+import "../theme"
 
 Rectangle {
     id: root
 
     property int currentIndex: 0
 
-    signal pageSelected(int index, string pageName)
+    signal pageSelected(
+        int pageIndex,
+        string pageName
+    )
 
-    implicitWidth: 230
-    color: "#0b1018"
+    implicitWidth: Theme.navigationWidth
 
-    border.width: 1
-    border.color: "#182332"
+    color: Theme.surface
 
-    ListModel {
-        id: navigationModel
+    border.width: 0
 
-        ListElement {
-            title: "Tableau de bord"
-            iconText: "⌂"
+    property var menuItems: [
+        {
+            "title": "Tableau de bord",
+            "icon": "⌂"
+        },
+        {
+            "title": "Véhicule",
+            "icon": "◆"
+        },
+        {
+            "title": "CAN Bus",
+            "icon": "↔"
+        },
+        {
+            "title": "Diagnostics",
+            "icon": "!"
+        },
+        {
+            "title": "Historique",
+            "icon": "◷"
+        },
+        {
+            "title": "Paramètres",
+            "icon": "⚙"
         }
+    ]
 
-        ListElement {
-            title: "Véhicule"
-            iconText: "V"
-        }
+    Rectangle {
+        anchors.top: parent.top
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
 
-        ListElement {
-            title: "CAN Bus"
-            iconText: "C"
-        }
+        width: Theme.borderWidth
 
-        ListElement {
-            title: "Diagnostics"
-            iconText: "D"
-        }
-
-        ListElement {
-            title: "Historique"
-            iconText: "H"
-        }
-
-        ListElement {
-            title: "Paramètres"
-            iconText: "⚙"
-        }
+        color: Theme.border
     }
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.topMargin: 20
-        anchors.bottomMargin: 20
 
-        spacing: 8
+        anchors.topMargin: Theme.spacingMedium
+        anchors.bottomMargin: Theme.spacingMedium
+
+        spacing: Theme.spacingTiny
 
         Text {
+            Layout.leftMargin: Theme.spacingLarge
+            Layout.bottomMargin: Theme.spacingSmall
+
             text: "NAVIGATION"
-            color: "#687487"
 
-            font.pixelSize: 11
+            color: Theme.textMuted
+
+            font.pixelSize: Theme.fontTiny
             font.bold: true
-            font.letterSpacing: 2
-
-            Layout.leftMargin: 22
-            Layout.bottomMargin: 8
+            font.letterSpacing: 1.4
         }
 
         Repeater {
-            model: navigationModel
+            model: root.menuItems
 
-            delegate: Rectangle {
+            delegate: Item {
+                id: menuItem
+
                 required property int index
-                required property string title
-                required property string iconText
+                required property var modelData
 
                 Layout.fillWidth: true
-                Layout.preferredHeight: 54
-                Layout.leftMargin: 10
-                Layout.rightMargin: 10
+                Layout.preferredHeight: Theme.navigationItemHeight
 
-                radius: 8
+                property bool selected: root.currentIndex === index
 
-                color: root.currentIndex === index
-                    ? "#14283b"
-                    : mouseArea.containsMouse
-                        ? "#111a26"
-                        : "transparent"
+                Rectangle {
+                    id: itemBackground
 
-                border.width: root.currentIndex === index ? 1 : 0
-                border.color: "#235b83"
+                    anchors.fill: parent
+
+                    anchors.leftMargin: Theme.spacingSmall
+                    anchors.rightMargin: Theme.spacingSmall
+
+                    radius: Theme.radiusSmall
+
+                    color: menuItem.selected
+                           ? Theme.surfaceSelected
+                           : mouseArea.containsMouse
+                             ? Theme.surfaceHover
+                             : "transparent"
+
+                    border.width: menuItem.selected
+                                  ? Theme.borderWidth
+                                  : 0
+
+                    border.color: menuItem.selected
+                                  ? Theme.borderSelected
+                                  : "transparent"
+
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: Theme.animationNormal
+                        }
+                    }
+
+                    Behavior on border.color {
+                        ColorAnimation {
+                            duration: Theme.animationNormal
+                        }
+                    }
+                }
+
+                Rectangle {
+                    anchors.left: itemBackground.left
+                    anchors.verticalCenter: itemBackground.verticalCenter
+
+                    width: menuItem.selected ? 4 : 0
+                    height: menuItem.selected ? 30 : 0
+
+                    radius: 2
+
+                    color: Theme.accent
+
+                    Behavior on width {
+                        NumberAnimation {
+                            duration: Theme.animationFast
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+
+                    Behavior on height {
+                        NumberAnimation {
+                            duration: Theme.animationNormal
+                            easing.type: Easing.OutCubic
+                        }
+                    }
+                }
 
                 RowLayout {
-                    anchors.fill: parent
-                    anchors.leftMargin: 14
-                    anchors.rightMargin: 14
+                    anchors.fill: itemBackground
 
-                    spacing: 14
+                    anchors.leftMargin: Theme.spacingMedium
+                    anchors.rightMargin: Theme.spacingMedium
+
+                    spacing: Theme.spacingNormal
 
                     Text {
-                        text: iconText
-                        color: root.currentIndex === index
-                            ? "#2aa7ff"
-                            : "#8793a5"
+                        text: menuItem.modelData.icon
 
-                        font.pixelSize: 20
+                        color: menuItem.selected
+                               ? Theme.accent
+                               : Theme.textSecondary
+
+                        font.pixelSize: 19
                         font.bold: true
 
-                        Layout.preferredWidth: 28
+                        Layout.preferredWidth: 24
                         Layout.alignment: Qt.AlignVCenter
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Theme.animationFast
+                            }
+                        }
                     }
 
                     Text {
-                        text: title
-                        color: root.currentIndex === index
-                            ? "#f0f3f7"
-                            : "#a5afbd"
-
-                        font.pixelSize: 15
-                        font.bold: root.currentIndex === index
-
                         Layout.fillWidth: true
-                        Layout.alignment: Qt.AlignVCenter
+
+                        text: menuItem.modelData.title
+
+                        color: menuItem.selected
+                               ? Theme.textPrimary
+                               : Theme.textSecondary
+
+                        font.pixelSize: Theme.fontNormal
+                        font.bold: menuItem.selected
+
+                        verticalAlignment: Text.AlignVCenter
+
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: Theme.animationFast
+                            }
+                        }
                     }
                 }
 
@@ -130,12 +208,17 @@ Rectangle {
                     id: mouseArea
 
                     anchors.fill: parent
+
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
 
                     onClicked: {
-                        root.currentIndex = index
-                        root.pageSelected(index, title)
+                        root.currentIndex = menuItem.index
+
+                        root.pageSelected(
+                            menuItem.index,
+                            menuItem.modelData.title
+                        )
                     }
                 }
             }
@@ -145,12 +228,56 @@ Rectangle {
             Layout.fillHeight: true
         }
 
-        Text {
-            text: "OmegaOS v0.1.0"
-            color: "#566171"
-            font.pixelSize: 11
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
 
-            Layout.alignment: Qt.AlignHCenter
+            Layout.leftMargin: Theme.spacingMedium
+            Layout.rightMargin: Theme.spacingMedium
+            Layout.bottomMargin: Theme.spacingNormal
+
+            color: Theme.border
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+
+            Layout.leftMargin: Theme.spacingLarge
+            Layout.rightMargin: Theme.spacingLarge
+
+            spacing: Theme.spacingSmall
+
+            Rectangle {
+                implicitWidth: 8
+                implicitHeight: 8
+
+                radius: 4
+
+                color: Theme.success
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+
+                spacing: 0
+
+                Text {
+                    text: "OmegaOS"
+
+                    color: Theme.textSecondary
+
+                    font.pixelSize: Theme.fontSmall
+                    font.bold: true
+                }
+
+                Text {
+                    text: "Système opérationnel"
+
+                    color: Theme.textMuted
+
+                    font.pixelSize: Theme.fontTiny
+                }
+            }
         }
     }
 }

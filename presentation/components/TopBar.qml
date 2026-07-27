@@ -1,6 +1,7 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
+
+import "../theme"
 
 Rectangle {
     id: root
@@ -8,48 +9,82 @@ Rectangle {
     property string applicationName: "OmegaOS"
     property string applicationVersion: "0.1.0"
 
-    implicitHeight: 72
-    color: "#0b1018"
+    property bool canConnected: false
+    property string cpuUsage: "--"
+    property string raspberryTemperature: "--"
 
-    border.width: 1
-    border.color: "#182332"
+    property string currentTime: Qt.formatTime(
+        new Date(),
+        "HH:mm:ss"
+    )
+
+    implicitHeight: Theme.topBarHeight
+
+    color: Theme.surface
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+
+        height: Theme.borderWidth
+
+        color: Theme.border
+    }
 
     RowLayout {
         anchors.fill: parent
-        anchors.leftMargin: 24
-        anchors.rightMargin: 24
 
-        spacing: 14
+        anchors.leftMargin: Theme.spacingLarge
+        anchors.rightMargin: Theme.spacingLarge
 
-        Text {
-            text: "Ω"
-            color: "#2aa7ff"
+        spacing: Theme.spacingLarge
 
-            font.pixelSize: 40
-            font.bold: true
+        RowLayout {
+            spacing: Theme.spacingNormal
 
-            Layout.alignment: Qt.AlignVCenter
-        }
+            Rectangle {
+                implicitWidth: 42
+                implicitHeight: 42
 
-        ColumnLayout {
-            spacing: 0
+                radius: 21
 
-            Layout.alignment: Qt.AlignVCenter
+                color: Theme.accentSoft
 
-            Text {
-                text: root.applicationName.toUpperCase()
-                color: "#f0f3f7"
+                border.width: Theme.borderWidth
+                border.color: Theme.borderSelected
 
-                font.pixelSize: 22
-                font.bold: true
-                font.letterSpacing: 2
+                Text {
+                    anchors.centerIn: parent
+
+                    text: "Ω"
+
+                    color: Theme.accent
+
+                    font.pixelSize: 25
+                    font.bold: true
+                }
             }
 
-            Text {
-                text: "Version " + root.applicationVersion
-                color: "#7f8a99"
+            ColumnLayout {
+                spacing: 1
 
-                font.pixelSize: 12
+                Text {
+                    text: root.applicationName
+
+                    color: Theme.textPrimary
+
+                    font.pixelSize: Theme.fontLarge
+                    font.bold: true
+                }
+
+                Text {
+                    text: "Version " + root.applicationVersion
+
+                    color: Theme.textMuted
+
+                    font.pixelSize: Theme.fontTiny
+                }
             }
         }
 
@@ -57,31 +92,150 @@ Rectangle {
             Layout.fillWidth: true
         }
 
-        Text {
-            id: clockText
+        RowLayout {
+            spacing: Theme.spacingLarge
 
-            color: "#d8dee8"
-            font.pixelSize: 24
-            font.bold: true
+            RowLayout {
+                spacing: Theme.spacingSmall
 
-            Layout.alignment: Qt.AlignVCenter
+                Rectangle {
+                    implicitWidth: 9
+                    implicitHeight: 9
 
-            function updateClock() {
-                clockText.text = Qt.formatDateTime(
-                    new Date(),
-                    "HH:mm"
-                )
+                    radius: 5
+
+                    color: root.canConnected
+                           ? Theme.success
+                           : Theme.disconnected
+
+                    SequentialAnimation on opacity {
+                        running: root.canConnected
+                        loops: Animation.Infinite
+
+                        NumberAnimation {
+                            from: 1.0
+                            to: 0.45
+                            duration: 800
+                        }
+
+                        NumberAnimation {
+                            from: 0.45
+                            to: 1.0
+                            duration: 800
+                        }
+                    }
+                }
+
+                ColumnLayout {
+                    spacing: 0
+
+                    Text {
+                        text: "CAN"
+
+                        color: Theme.textMuted
+
+                        font.pixelSize: Theme.fontTiny
+                        font.bold: true
+                    }
+
+                    Text {
+                        text: root.canConnected
+                              ? "Connecté"
+                              : "Déconnecté"
+
+                        color: root.canConnected
+                               ? Theme.success
+                               : Theme.textSecondary
+
+                        font.pixelSize: Theme.fontSmall
+                    }
+                }
             }
 
-            Component.onCompleted: updateClock()
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 30
 
-            Timer {
-                interval: 1000
-                running: true
-                repeat: true
-
-                onTriggered: clockText.updateClock()
+                color: Theme.border
             }
+
+            ColumnLayout {
+                spacing: 0
+
+                Text {
+                    text: "CPU"
+
+                    color: Theme.textMuted
+
+                    font.pixelSize: Theme.fontTiny
+                    font.bold: true
+                }
+
+                Text {
+                    text: root.cpuUsage + " %"
+
+                    color: Theme.textSecondary
+
+                    font.pixelSize: Theme.fontSmall
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 30
+
+                color: Theme.border
+            }
+
+            ColumnLayout {
+                spacing: 0
+
+                Text {
+                    text: "RASPBERRY"
+
+                    color: Theme.textMuted
+
+                    font.pixelSize: Theme.fontTiny
+                    font.bold: true
+                }
+
+                Text {
+                    text: root.raspberryTemperature + " °C"
+
+                    color: Theme.textSecondary
+
+                    font.pixelSize: Theme.fontSmall
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 30
+
+                color: Theme.border
+            }
+
+            Text {
+                text: root.currentTime
+
+                color: Theme.textPrimary
+
+                font.pixelSize: Theme.fontLarge
+                font.bold: true
+            }
+        }
+    }
+
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+
+        onTriggered: {
+            root.currentTime = Qt.formatTime(
+                new Date(),
+                "HH:mm:ss"
+            )
         }
     }
 }
