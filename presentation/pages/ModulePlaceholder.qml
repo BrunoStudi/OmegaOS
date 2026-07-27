@@ -1,23 +1,52 @@
 import QtQuick
 import QtQuick.Layouts
 
+import "../theme"
+
 Rectangle {
     id: root
 
     property string title: ""
     property string description: ""
 
-    color: "#05070b"
+    color: Theme.background
 
     ColumnLayout {
         anchors.centerIn: parent
-        spacing: 12
+
+        spacing: Theme.spacingNormal
+
+        Rectangle {
+            Layout.alignment: Qt.AlignHCenter
+
+            implicitWidth: 72
+            implicitHeight: 72
+
+            radius: 36
+
+            color: Theme.accentSoft
+
+            border.width: Theme.borderWidth
+            border.color: Theme.borderSelected
+
+            Text {
+                anchors.centerIn: parent
+
+                text: "Ω"
+
+                color: Theme.accent
+
+                font.pixelSize: 34
+                font.bold: true
+            }
+        }
 
         Text {
             Layout.alignment: Qt.AlignHCenter
 
             text: root.title
-            color: "#f0f3f7"
+
+            color: Theme.textPrimary
 
             font.pixelSize: 34
             font.bold: true
@@ -27,18 +56,20 @@ Rectangle {
             Layout.alignment: Qt.AlignHCenter
 
             text: root.description
-            color: "#7f8a99"
 
-            font.pixelSize: 16
+            color: Theme.textSecondary
+
+            font.pixelSize: Theme.fontMedium
         }
 
         Text {
             Layout.alignment: Qt.AlignHCenter
 
             text: "Module en développement"
-            color: "#2aa7ff"
 
-            font.pixelSize: 14
+            color: Theme.accent
+
+            font.pixelSize: Theme.fontNormal
             font.bold: true
         }
     }

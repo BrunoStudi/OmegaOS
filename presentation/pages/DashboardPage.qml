@@ -1,39 +1,45 @@
 import QtQuick
-import QtQuick.Controls
 import QtQuick.Layouts
+
+import "../components"
+import "../theme"
 
 Rectangle {
     id: root
 
     property string statusMessage: "Système initialisé"
 
-    color: "#05070b"
+    color: Theme.background
 
     ColumnLayout {
         anchors.fill: parent
-        anchors.margins: 28
-        spacing: 22
+        anchors.margins: Theme.pageMargin
+
+        spacing: Theme.spacingLarge
 
         RowLayout {
             Layout.fillWidth: true
-            spacing: 12
+
+            spacing: Theme.spacingMedium
 
             ColumnLayout {
                 spacing: 4
 
                 Text {
                     text: "Tableau de bord"
-                    color: "#f0f3f7"
 
-                    font.pixelSize: 32
+                    color: Theme.textPrimary
+
+                    font.pixelSize: Theme.fontTitle
                     font.bold: true
                 }
 
                 Text {
                     text: "Vue générale du système"
-                    color: "#7f8a99"
 
-                    font.pixelSize: 15
+                    color: Theme.textSecondary
+
+                    font.pixelSize: Theme.fontMedium
                 }
             }
 
@@ -42,34 +48,38 @@ Rectangle {
             }
 
             Rectangle {
-                implicitWidth: statusRow.implicitWidth + 28
+                implicitWidth: statusContent.implicitWidth + 28
                 implicitHeight: 38
 
                 radius: 19
-                color: "#10271d"
 
-                border.width: 1
-                border.color: "#245e3d"
+                color: Theme.successBackground
+
+                border.width: Theme.borderWidth
+                border.color: Theme.successBorder
 
                 RowLayout {
-                    id: statusRow
+                    id: statusContent
 
                     anchors.centerIn: parent
-                    spacing: 9
+
+                    spacing: Theme.spacingSmall
 
                     Rectangle {
                         implicitWidth: 10
                         implicitHeight: 10
 
                         radius: 5
-                        color: "#49d17d"
+
+                        color: Theme.success
                     }
 
                     Text {
                         text: root.statusMessage
-                        color: "#7ce7a4"
 
-                        font.pixelSize: 14
+                        color: Theme.success
+
+                        font.pixelSize: Theme.fontNormal
                         font.bold: true
                     }
                 }
@@ -80,72 +90,56 @@ Rectangle {
             Layout.fillWidth: true
 
             columns: 3
+
             columnSpacing: 18
             rowSpacing: 18
 
-            Repeater {
-                model: [
-                    {
-                        "title": "Connexion CAN",
-                        "value": "Déconnecté",
-                        "detail": "Interface non initialisée"
-                    },
-                    {
-                        "title": "Véhicule",
-                        "value": "Opel Omega B",
-                        "detail": "3.2 V6 — Y32SE"
-                    },
-                    {
-                        "title": "Diagnostics",
-                        "value": "Aucun défaut",
-                        "detail": "Analyse non démarrée"
-                    }
-                ]
+            InfoCard {
+                Layout.fillWidth: true
 
-                delegate: Rectangle {
-                    required property var modelData
+                title: "Connexion CAN"
+                value: "Déconnecté"
+                subtitle: "Interface non initialisée"
 
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 155
+                accentColor: Theme.disconnected
+                valueColor: Theme.textSecondary
 
-                    radius: 12
-                    color: "#0b1018"
+                interactive: true
 
-                    border.width: 1
-                    border.color: "#182332"
+                onClicked: {
+                    console.log("Carte CAN sélectionnée")
+                }
+            }
 
-                    ColumnLayout {
-                        anchors.fill: parent
-                        anchors.margins: 20
-                        spacing: 8
+            InfoCard {
+                Layout.fillWidth: true
 
-                        Text {
-                            text: modelData.title
-                            color: "#7f8a99"
+                title: "Véhicule"
+                value: "Opel Omega B"
+                subtitle: "3.2 V6 — Y32SE"
 
-                            font.pixelSize: 13
-                            font.bold: true
-                        }
+                accentColor: Theme.accent
 
-                        Text {
-                            text: modelData.value
-                            color: "#f0f3f7"
+                interactive: true
 
-                            font.pixelSize: 24
-                            font.bold: true
-                        }
+                onClicked: {
+                    console.log("Carte véhicule sélectionnée")
+                }
+            }
 
-                        Item {
-                            Layout.fillHeight: true
-                        }
+            InfoCard {
+                Layout.fillWidth: true
 
-                        Text {
-                            text: modelData.detail
-                            color: "#697586"
+                title: "Diagnostics"
+                value: "Aucun défaut"
+                subtitle: "Analyse non démarrée"
 
-                            font.pixelSize: 12
-                        }
-                    }
+                accentColor: Theme.success
+
+                interactive: true
+
+                onClicked: {
+                    console.log("Carte diagnostics sélectionnée")
                 }
             }
         }
@@ -154,22 +148,25 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            radius: 12
-            color: "#0b1018"
+            radius: Theme.radiusMedium
 
-            border.width: 1
-            border.color: "#182332"
+            color: Theme.surface
+
+            border.width: Theme.borderWidth
+            border.color: Theme.border
 
             ColumnLayout {
                 anchors.fill: parent
                 anchors.margins: 22
-                spacing: 14
+
+                spacing: Theme.spacingNormal
 
                 Text {
                     text: "Activité récente"
-                    color: "#f0f3f7"
 
-                    font.pixelSize: 20
+                    color: Theme.textPrimary
+
+                    font.pixelSize: Theme.fontLarge
                     font.bold: true
                 }
 
@@ -177,7 +174,7 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
 
-                    color: "#182332"
+                    color: Theme.border
                 }
 
                 Item {
@@ -188,18 +185,20 @@ Rectangle {
                     Layout.alignment: Qt.AlignHCenter
 
                     text: "Aucune donnée enregistrée"
-                    color: "#647081"
 
-                    font.pixelSize: 16
+                    color: Theme.textSecondary
+
+                    font.pixelSize: Theme.fontMedium
                 }
 
                 Text {
                     Layout.alignment: Qt.AlignHCenter
 
                     text: "Les événements CAN et les diagnostics apparaîtront ici."
-                    color: "#4f5968"
 
-                    font.pixelSize: 13
+                    color: Theme.textMuted
+
+                    font.pixelSize: Theme.fontNormal
                 }
 
                 Item {
