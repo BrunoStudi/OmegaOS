@@ -1,0 +1,23 @@
+{
+    "application": {
+        "name": "OmegaOS",
+        "version": "0.1.0",
+        "language": "fr"
+    },
+    "display": {
+        "fullscreen": false,
+        "theme": "dark"
+    },
+    "vehicle": {
+        "name": "Opel Omega B",
+        "model": "3.2 V6",
+        "year": 2001
+    },
+    "can": {
+        "interface": "can0",
+        "bitrate": 500000
+    },
+    "logging": {
+        "level": "INFO"
+    }
+}

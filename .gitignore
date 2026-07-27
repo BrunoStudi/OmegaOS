@@ -1,0 +1,46 @@
+# Environnements virtuels
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Outils de test
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Analyse et formatage
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Système
+.DS_Store
+Thumbs.db
+
+# Logs générés
+data/logs/*
+!data/logs/.gitkeep
+
+# Données temporaires ou générées
+data/cache/*
+data/recordings/*
+data/trips/*
+data/statistics/*
+
+# Variables sensibles
+.env
+.env.*
+!.env.example
+
+# Fichiers de construction
+build/
+dist/
+*.egg-info/
