@@ -6,6 +6,10 @@ from core.application import OmegaApplication
 
 
 def main() -> int:
+    """
+    Point d'entrée principal d'OmegaOS.
+    """
+
     application = OmegaApplication()
     return application.start()
 

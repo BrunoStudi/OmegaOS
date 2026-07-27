@@ -37,23 +37,32 @@ class MainWindow:
 
     def run(self) -> int:
         """
-        Charge Main.qml puis démarre Qt.
+        Charge Main.qml puis démarre la boucle événementielle Qt.
         """
 
         qml_file = (
-            Path(__file__).parent
+            Path(__file__).resolve().parent
             / "qml"
             / "Main.qml"
         )
 
-        self._logger.info("Chargement de %s", qml_file)
+        self._logger.info(
+            "Chargement de l'interface QML : %s",
+            qml_file,
+        )
 
-        self._engine.load(QUrl.fromLocalFile(str(qml_file.resolve())))
+        self._engine.load(
+            QUrl.fromLocalFile(str(qml_file))
+        )
 
         if not self._engine.rootObjects():
-            self._logger.error("Impossible de charger Main.qml")
+            self._logger.error(
+                "Impossible de charger Main.qml"
+            )
             return 1
 
-        self._logger.info("Interface chargée")
+        self._logger.info(
+            "Interface graphique chargée"
+        )
 
         return self._app.exec()

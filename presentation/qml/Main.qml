@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import "../components"
+import "../pages"
 
 ApplicationWindow {
     id: root
@@ -13,8 +14,6 @@ ApplicationWindow {
 
     title: applicationViewModel.application_name
     color: "#05070b"
-
-    property string currentPageName: "Tableau de bord"
 
     ColumnLayout {
         anchors.fill: parent
@@ -33,47 +32,45 @@ ApplicationWindow {
             spacing: 0
 
             NavigationMenu {
+                id: navigationMenu
+
                 Layout.fillHeight: true
                 Layout.preferredWidth: 230
-
-                onPageSelected: function(index, pageName) {
-                    root.currentPageName = pageName
-                }
             }
 
-            Rectangle {
+            StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                color: "#05070b"
+                currentIndex: navigationMenu.currentIndex
 
-                ColumnLayout {
-                    anchors.centerIn: parent
-                    spacing: 16
+                DashboardPage {
+                    statusMessage: applicationViewModel.status_message
+                }
 
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
+                ModulePlaceholder {
+                    title: "Véhicule"
+                    description: "Informations générales et état du véhicule"
+                }
 
-                        text: root.currentPageName
-                        color: "#f0f3f7"
+                ModulePlaceholder {
+                    title: "CAN Bus"
+                    description: "Connexion, trames et décodage CAN"
+                }
 
-                        font.pixelSize: 34
-                        font.bold: true
-                    }
+                ModulePlaceholder {
+                    title: "Diagnostics"
+                    description: "Lecture des défauts et analyse du véhicule"
+                }
 
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
+                ModulePlaceholder {
+                    title: "Historique"
+                    description: "Trajets, événements et statistiques"
+                }
 
-                        text: root.currentPageName === "Tableau de bord"
-                            ? applicationViewModel.status_message
-                            : "Module en développement"
-
-                        color: root.currentPageName === "Tableau de bord"
-                            ? "#49d17d"
-                            : "#8b95a5"
-
-                        font.pixelSize: 18
-                    }
+                ModulePlaceholder {
+                    title: "Paramètres"
+                    description: "Configuration générale d’OmegaOS"
                 }
             }
         }

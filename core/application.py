@@ -2,59 +2,72 @@ from __future__ import annotations
 
 from core.logger import setup_logger
 from core.settings import SettingsManager
+from presentation.main_window import MainWindow
 
 
 class OmegaApplication:
     """
-    Point central d'OmegaOS.
+    Point central de l'application OmegaOS.
 
-    Cette classe orchestre le démarrage et l'arrêt des différents modules,
-    sans contenir directement leur logique métier.
+    Cette classe initialise la configuration, les services
+    et l'interface graphique.
     """
 
     def __init__(self) -> None:
-        self.logger = setup_logger()
-        self.settings = SettingsManager()
+        self._logger = setup_logger()
+        self._settings = SettingsManager()
 
-        self.application_name = self.settings.get(
+        self._main_window: MainWindow | None = None
+        self._is_running = False
+
+    @property
+    def application_name(self) -> str:
+        """
+        Retourne le nom configuré de l'application.
+        """
+
+        return self._settings.get(
             "application",
             "name",
             "OmegaOS",
         )
-        self.application_version = self.settings.get(
+
+    @property
+    def application_version(self) -> str:
+        """
+        Retourne la version configurée de l'application.
+        """
+
+        return self._settings.get(
             "application",
             "version",
             "0.1.0",
         )
 
-        self._is_running = False
-
     @property
     def is_running(self) -> bool:
         """
-        Indique si l'application est actuellement démarrée.
+        Indique si OmegaOS est actuellement démarré.
         """
 
         return self._is_running
 
     def start(self) -> int:
         """
-        Démarre OmegaOS.
-
-        Retourne un code de sortie :
-        - 0 : arrêt normal
-        - autre valeur : erreur
+        Démarre les services puis lance l'interface graphique.
         """
 
         if self._is_running:
-            self.logger.warning(
+            self._logger.warning(
                 "%s est déjà démarré",
                 self.application_name,
             )
             return 0
 
+        exit_code = 1
+
         try:
-            self.logger.info(
+            self._logger.info(
                 "Démarrage de %s v%s",
                 self.application_name,
                 self.application_version,
@@ -64,58 +77,58 @@ class OmegaApplication:
 
             self._initialize_services()
 
-            self.logger.info(
+            self._main_window = MainWindow(self._settings)
+
+            self._logger.info(
                 "%s est initialisé",
                 self.application_name,
             )
 
-            return 0
+            exit_code = self._main_window.run()
 
         except Exception:
-            self.logger.exception(
+            self._logger.exception(
                 "Une erreur critique est survenue pendant le démarrage"
             )
-            return 1
 
         finally:
             self.stop()
 
+        return exit_code
+
     def stop(self) -> None:
         """
-        Arrête proprement OmegaOS.
+        Arrête proprement OmegaOS et ses services.
         """
 
         if not self._is_running:
             return
 
-        self.logger.info(
+        self._logger.info(
             "Arrêt de %s",
             self.application_name,
         )
 
         self._shutdown_services()
 
+        self._main_window = None
         self._is_running = False
 
-        self.logger.info(
+        self._logger.info(
             "%s est arrêté",
             self.application_name,
         )
 
     def _initialize_services(self) -> None:
         """
-        Initialise les différents modules d'OmegaOS.
-
-        Les futurs modules seront ajoutés ici :
-        interface, CAN, API, audio, GPS, etc.
+        Initialise les futurs services d'OmegaOS.
         """
 
-        self.logger.info("Initialisation des services")
+        self._logger.info("Initialisation des services")
 
     def _shutdown_services(self) -> None:
         """
-        Arrête les différents modules dans l'ordre inverse
-        de leur démarrage.
+        Arrête les futurs services d'OmegaOS.
         """
 
-        self.logger.info("Arrêt des services")
+        self._logger.info("Arrêt des services")
