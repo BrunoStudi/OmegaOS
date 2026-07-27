@@ -14,6 +14,8 @@ ApplicationWindow {
     title: applicationViewModel.application_name
     color: "#05070b"
 
+    property string currentPageName: "Tableau de bord"
+
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -25,33 +27,53 @@ ApplicationWindow {
             applicationVersion: applicationViewModel.application_version
         }
 
-        Rectangle {
+        RowLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            spacing: 0
 
-            color: "#05070b"
+            NavigationMenu {
+                Layout.fillHeight: true
+                Layout.preferredWidth: 230
 
-            ColumnLayout {
-                anchors.centerIn: parent
-                spacing: 16
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-
-                    text: "Ω"
-                    color: "#2aa7ff"
-
-                    font.pixelSize: 100
-                    font.bold: true
+                onPageSelected: function(index, pageName) {
+                    root.currentPageName = pageName
                 }
+            }
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
 
-                    text: applicationViewModel.status_message
-                    color: "#49d17d"
+                color: "#05070b"
 
-                    font.pixelSize: 18
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    spacing: 16
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: root.currentPageName
+                        color: "#f0f3f7"
+
+                        font.pixelSize: 34
+                        font.bold: true
+                    }
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+
+                        text: root.currentPageName === "Tableau de bord"
+                            ? applicationViewModel.status_message
+                            : "Module en développement"
+
+                        color: root.currentPageName === "Tableau de bord"
+                            ? "#49d17d"
+                            : "#8b95a5"
+
+                        font.pixelSize: 18
+                    }
                 }
             }
         }
