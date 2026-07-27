@@ -2,6 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 
+import "../components"
+
 ApplicationWindow {
     id: root
 
@@ -10,50 +12,48 @@ ApplicationWindow {
     visible: true
 
     title: applicationViewModel.application_name
-
     color: "#05070b"
 
     ColumnLayout {
-        anchors.centerIn: parent
-        spacing: 18
+        anchors.fill: parent
+        spacing: 0
 
-        Text {
-            Layout.alignment: Qt.AlignHCenter
+        TopBar {
+            Layout.fillWidth: true
 
-            text: "Ω"
-            color: "#2aa7ff"
-
-            font.pixelSize: 130
-            font.bold: true
+            applicationName: applicationViewModel.application_name
+            applicationVersion: applicationViewModel.application_version
         }
 
-        Text {
-            Layout.alignment: Qt.AlignHCenter
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.fillHeight: true
 
-            text: applicationViewModel.application_name.toUpperCase()
-            color: "#f0f3f7"
+            color: "#05070b"
 
-            font.pixelSize: 44
-            font.bold: true
-            font.letterSpacing: 4
-        }
+            ColumnLayout {
+                anchors.centerIn: parent
+                spacing: 16
 
-        Text {
-            Layout.alignment: Qt.AlignHCenter
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
 
-            text: "Version " + applicationViewModel.application_version
-            color: "#8b95a5"
+                    text: "Ω"
+                    color: "#2aa7ff"
 
-            font.pixelSize: 18
-        }
+                    font.pixelSize: 100
+                    font.bold: true
+                }
 
-        Text {
-            Layout.alignment: Qt.AlignHCenter
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
 
-            text: applicationViewModel.status_message
-            color: "#49d17d"
+                    text: applicationViewModel.status_message
+                    color: "#49d17d"
 
-            font.pixelSize: 16
+                    font.pixelSize: 18
+                }
+            }
         }
     }
 }
