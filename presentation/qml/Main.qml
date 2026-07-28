@@ -20,8 +20,6 @@ ApplicationWindow {
     title: applicationViewModel.application_name
     color: Theme.background
 
-    property bool canConnected: false
-
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
@@ -33,7 +31,7 @@ ApplicationWindow {
             applicationName: applicationViewModel.application_name
             applicationVersion: applicationViewModel.application_version
 
-            canConnected: root.canConnected
+            canConnected: canBusViewModel.connected
 
             cpuUsage: systemViewModel.cpu_usage
             memoryUsage: systemViewModel.memory_usage
@@ -69,6 +67,10 @@ ApplicationWindow {
 
                 DashboardPage {
                     statusMessage: applicationViewModel.status_message
+
+                    onPageRequested: function(pageIndex) {
+                        navigationMenu.currentIndex = pageIndex
+                    }
                 }
 
                 ModulePlaceholder {
@@ -76,9 +78,7 @@ ApplicationWindow {
                     description: "Informations générales et état du véhicule"
                 }
 
-                ModulePlaceholder {
-                    title: "CAN Bus"
-                    description: "Connexion, trames et décodage CAN"
+                CanBusPage {
                 }
 
                 ModulePlaceholder {
@@ -102,14 +102,16 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.preferredHeight: Theme.statusBarHeight
 
-            statusMessage: applicationViewModel.status_message
+            statusMessage: canBusViewModel.connected
+                           ? "Réception CAN active"
+                           : applicationViewModel.status_message
 
             hardwareName: systemViewModel.hostname
             operatingSystem: systemViewModel.operating_system
             pythonVersion: systemViewModel.python_version
             qtVersion: "Qt / PySide6"
 
-            canConnected: root.canConnected
+            canConnected: canBusViewModel.connected
         }
     }
 }

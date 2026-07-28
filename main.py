@@ -1,6 +1,18 @@
 from __future__ import annotations
 
+import os
 import sys
+
+
+# Le style Windows natif ne permet pas de personnaliser complètement
+# certains contrôles QML comme Button.
+#
+# Basic est entièrement personnalisable et cohérent sur Windows,
+# Linux et Raspberry Pi.
+os.environ.setdefault(
+    "QT_QUICK_CONTROLS_STYLE",
+    "Basic",
+)
 
 from core.application import OmegaApplication
 

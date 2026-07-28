@@ -9,6 +9,8 @@ Rectangle {
 
     property string statusMessage: "Système initialisé"
 
+    signal pageRequested(int pageIndex)
+
     color: Theme.background
 
     ColumnLayout {
@@ -23,13 +25,14 @@ Rectangle {
             spacing: Theme.spacingMedium
 
             ColumnLayout {
-                spacing: 4
+                spacing: Theme.spacingTiny
 
                 Text {
                     text: "Tableau de bord"
 
                     color: Theme.textPrimary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontTitle
                     font.bold: true
                 }
@@ -39,6 +42,7 @@ Rectangle {
 
                     color: Theme.textSecondary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontMedium
                 }
             }
@@ -62,7 +66,6 @@ Rectangle {
                     id: statusContent
 
                     anchors.centerIn: parent
-
                     spacing: Theme.spacingSmall
 
                     Rectangle {
@@ -70,7 +73,6 @@ Rectangle {
                         implicitHeight: 10
 
                         radius: 5
-
                         color: Theme.success
                     }
 
@@ -79,6 +81,7 @@ Rectangle {
 
                         color: Theme.success
 
+                        font.family: "Segoe UI"
                         font.pixelSize: Theme.fontNormal
                         font.bold: true
                     }
@@ -91,23 +94,34 @@ Rectangle {
 
             columns: 3
 
-            columnSpacing: 18
-            rowSpacing: 18
+            columnSpacing: Theme.spacingMedium
+            rowSpacing: Theme.spacingMedium
 
             InfoCard {
                 Layout.fillWidth: true
 
                 title: "Connexion CAN"
-                value: "Déconnecté"
-                subtitle: "Interface non initialisée"
+                value: canBusViewModel.connection_status
 
-                accentColor: Theme.disconnected
-                valueColor: Theme.textSecondary
+                subtitle: canBusViewModel.connected
+                          ? canBusViewModel.formatted_bitrate
+                            + " — "
+                            + canBusViewModel.frames_per_second
+                            + " trames/s"
+                          : "Interface non initialisée"
+
+                accentColor: canBusViewModel.connected
+                             ? Theme.success
+                             : Theme.disconnected
+
+                valueColor: canBusViewModel.connected
+                            ? Theme.success
+                            : Theme.textSecondary
 
                 interactive: true
 
                 onClicked: {
-                    console.log("Carte CAN sélectionnée")
+                    root.pageRequested(2)
                 }
             }
 
@@ -123,7 +137,7 @@ Rectangle {
                 interactive: true
 
                 onClicked: {
-                    console.log("Carte véhicule sélectionnée")
+                    root.pageRequested(1)
                 }
             }
 
@@ -139,7 +153,7 @@ Rectangle {
                 interactive: true
 
                 onClicked: {
-                    console.log("Carte diagnostics sélectionnée")
+                    root.pageRequested(3)
                 }
             }
         }
@@ -149,7 +163,6 @@ Rectangle {
             Layout.fillHeight: true
 
             radius: Theme.radiusMedium
-
             color: Theme.surface
 
             border.width: Theme.borderWidth
@@ -166,6 +179,7 @@ Rectangle {
 
                     color: Theme.textPrimary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontLarge
                     font.bold: true
                 }
@@ -184,9 +198,17 @@ Rectangle {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
 
-                    text: "Aucune donnée enregistrée"
+                    text: canBusViewModel.connected
+                          ? canBusViewModel.last_frame
+                          : "Aucune donnée enregistrée"
 
-                    color: Theme.textSecondary
+                    color: canBusViewModel.connected
+                           ? Theme.accent
+                           : Theme.textSecondary
+
+                    font.family: canBusViewModel.connected
+                                 ? "Consolas"
+                                 : "Segoe UI"
 
                     font.pixelSize: Theme.fontMedium
                 }
@@ -194,10 +216,14 @@ Rectangle {
                 Text {
                     Layout.alignment: Qt.AlignHCenter
 
-                    text: "Les événements CAN et les diagnostics apparaîtront ici."
+                    text: canBusViewModel.connected
+                          ? canBusViewModel.frames_received
+                            + " trames reçues depuis la connexion"
+                          : "Les événements CAN et les diagnostics apparaîtront ici."
 
                     color: Theme.textMuted
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontNormal
                 }
 

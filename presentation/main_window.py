@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QFont, QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine
 
 from core.logger import setup_logger
@@ -12,7 +12,12 @@ from core.settings import SettingsManager
 from presentation.viewmodels.application_viewmodel import (
     ApplicationViewModel,
 )
-from presentation.viewmodels.system_viewmodel import SystemViewModel
+from presentation.viewmodels.can_bus_viewmodel import (
+    CanBusViewModel,
+)
+from presentation.viewmodels.system_viewmodel import (
+    SystemViewModel,
+)
 
 
 class MainWindow:
@@ -26,6 +31,17 @@ class MainWindow:
         self._settings = settings
 
         self._app = QGuiApplication(sys.argv)
+
+        # Police disponible nativement sous Windows.
+        # Sur Linux et Raspberry Pi, Qt choisira une police de remplacement
+        # si Segoe UI n'est pas installée.
+        self._app.setFont(
+            QFont(
+                "Segoe UI",
+                10,
+            )
+        )
+
         self._engine = QQmlApplicationEngine()
 
         self._application_viewmodel = ApplicationViewModel(
@@ -33,15 +49,23 @@ class MainWindow:
         )
 
         self._system_viewmodel = SystemViewModel()
+        self._can_bus_viewmodel = CanBusViewModel()
 
-        self._engine.rootContext().setContextProperty(
+        context = self._engine.rootContext()
+
+        context.setContextProperty(
             "applicationViewModel",
             self._application_viewmodel,
         )
 
-        self._engine.rootContext().setContextProperty(
+        context.setContextProperty(
             "systemViewModel",
             self._system_viewmodel,
+        )
+
+        context.setContextProperty(
+            "canBusViewModel",
+            self._can_bus_viewmodel,
         )
 
     def run(self) -> int:
