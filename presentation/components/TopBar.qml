@@ -10,8 +10,10 @@ Rectangle {
     property string applicationVersion: "0.1.0"
 
     property bool canConnected: false
-    property string cpuUsage: "--"
-    property string raspberryTemperature: "--"
+
+    property real cpuUsage: 0.0
+    property real memoryUsage: 0.0
+    property real raspberryTemperature: -1.0
 
     property string currentTime: Qt.formatTime(
         new Date(),
@@ -28,7 +30,6 @@ Rectangle {
         anchors.bottom: parent.bottom
 
         height: Theme.borderWidth
-
         color: Theme.border
     }
 
@@ -58,7 +59,6 @@ Rectangle {
                     anchors.centerIn: parent
 
                     text: "Ω"
-
                     color: Theme.accent
 
                     font.pixelSize: 25
@@ -71,7 +71,6 @@ Rectangle {
 
                 Text {
                     text: root.applicationName
-
                     color: Theme.textPrimary
 
                     font.pixelSize: Theme.fontLarge
@@ -80,7 +79,6 @@ Rectangle {
 
                 Text {
                     text: "Version " + root.applicationVersion
-
                     color: Theme.textMuted
 
                     font.pixelSize: Theme.fontTiny
@@ -172,7 +170,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: root.cpuUsage + " %"
+                    text: root.cpuUsage.toFixed(1) + " %"
 
                     color: Theme.textSecondary
 
@@ -191,7 +189,7 @@ Rectangle {
                 spacing: 0
 
                 Text {
-                    text: "RASPBERRY"
+                    text: "MÉMOIRE"
 
                     color: Theme.textMuted
 
@@ -200,9 +198,43 @@ Rectangle {
                 }
 
                 Text {
-                    text: root.raspberryTemperature + " °C"
+                    text: root.memoryUsage.toFixed(1) + " %"
 
                     color: Theme.textSecondary
+
+                    font.pixelSize: Theme.fontSmall
+                }
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: 30
+
+                color: Theme.border
+            }
+
+            ColumnLayout {
+                spacing: 0
+
+                Text {
+                    text: "TEMPÉRATURE"
+
+                    color: Theme.textMuted
+
+                    font.pixelSize: Theme.fontTiny
+                    font.bold: true
+                }
+
+                Text {
+                    text: root.raspberryTemperature >= 0
+                          ? root.raspberryTemperature.toFixed(1) + " °C"
+                          : "Indisponible"
+
+                    color: root.raspberryTemperature >= 70
+                           ? Theme.danger
+                           : root.raspberryTemperature >= 60
+                             ? Theme.warning
+                             : Theme.textSecondary
 
                     font.pixelSize: Theme.fontSmall
                 }

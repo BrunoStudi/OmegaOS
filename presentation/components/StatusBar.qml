@@ -7,9 +7,11 @@ Rectangle {
     id: root
 
     property string statusMessage: "Prêt"
-    property string hardwareName: "Raspberry Pi 3B+"
-    property string pythonVersion: "Python"
-    property string qtVersion: "Qt"
+    property string hardwareName: "Ordinateur"
+    property string pythonVersion: ""
+    property string qtVersion: ""
+    property string operatingSystem: ""
+
     property bool canConnected: false
 
     implicitHeight: Theme.statusBarHeight
@@ -22,7 +24,6 @@ Rectangle {
         anchors.top: parent.top
 
         height: Theme.borderWidth
-
         color: Theme.border
     }
 
@@ -42,7 +43,6 @@ Rectangle {
                 implicitHeight: 7
 
                 radius: 4
-
                 color: Theme.success
             }
 
@@ -76,7 +76,23 @@ Rectangle {
         }
 
         Text {
-            text: root.pythonVersion
+            text: root.operatingSystem
+
+            color: Theme.textMuted
+
+            font.pixelSize: Theme.fontTiny
+        }
+
+        Text {
+            text: "•"
+
+            color: Theme.borderHover
+
+            font.pixelSize: Theme.fontTiny
+        }
+
+        Text {
+            text: "Python " + root.pythonVersion
 
             color: Theme.textMuted
 

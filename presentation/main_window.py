@@ -12,11 +12,13 @@ from core.settings import SettingsManager
 from presentation.viewmodels.application_viewmodel import (
     ApplicationViewModel,
 )
+from presentation.viewmodels.system_viewmodel import SystemViewModel
 
 
 class MainWindow:
     """
-    Gère l'application Qt et le chargement de l'interface QML.
+    Gère l'application Qt, les ViewModels et le chargement
+    de l'interface QML.
     """
 
     def __init__(self, settings: SettingsManager) -> None:
@@ -30,9 +32,16 @@ class MainWindow:
             self._settings
         )
 
+        self._system_viewmodel = SystemViewModel()
+
         self._engine.rootContext().setContextProperty(
             "applicationViewModel",
             self._application_viewmodel,
+        )
+
+        self._engine.rootContext().setContextProperty(
+            "systemViewModel",
+            self._system_viewmodel,
         )
 
     def run(self) -> int:

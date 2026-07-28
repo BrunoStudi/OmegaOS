@@ -18,14 +18,12 @@ ApplicationWindow {
     visible: true
 
     title: applicationViewModel.application_name
-
     color: Theme.background
 
     property bool canConnected: false
 
     ColumnLayout {
         anchors.fill: parent
-
         spacing: 0
 
         TopBar {
@@ -37,8 +35,9 @@ ApplicationWindow {
 
             canConnected: root.canConnected
 
-            cpuUsage: "--"
-            raspberryTemperature: "--"
+            cpuUsage: systemViewModel.cpu_usage
+            memoryUsage: systemViewModel.memory_usage
+            raspberryTemperature: systemViewModel.temperature
         }
 
         RowLayout {
@@ -104,8 +103,10 @@ ApplicationWindow {
             Layout.preferredHeight: Theme.statusBarHeight
 
             statusMessage: applicationViewModel.status_message
-            hardwareName: "Raspberry Pi 3B+"
-            pythonVersion: "Python"
+
+            hardwareName: systemViewModel.hostname
+            operatingSystem: systemViewModel.operating_system
+            pythonVersion: systemViewModel.python_version
             qtVersion: "Qt / PySide6"
 
             canConnected: root.canConnected
