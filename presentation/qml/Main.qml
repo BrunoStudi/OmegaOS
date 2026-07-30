@@ -10,7 +10,7 @@ ApplicationWindow {
     id: root
 
     width: 1280
-    height: 720
+    height: 800
 
     minimumWidth: 1024
     minimumHeight: 600
@@ -28,14 +28,26 @@ ApplicationWindow {
             Layout.fillWidth: true
             Layout.preferredHeight: Theme.topBarHeight
 
-            applicationName: applicationViewModel.application_name
-            applicationVersion: applicationViewModel.application_version
+            applicationName:
+                applicationViewModel.application_name
 
-            canConnected: canBusViewModel.connected
+            applicationVersion:
+                applicationViewModel.application_version
 
-            cpuUsage: systemViewModel.cpu_usage
-            memoryUsage: systemViewModel.memory_usage
-            raspberryTemperature: systemViewModel.temperature
+            canConnected:
+                canBusViewModel.connected
+
+            canMode:
+                canBusViewModel.display_mode
+
+            cpuUsage:
+                systemViewModel.cpu_usage
+
+            memoryUsage:
+                systemViewModel.memory_usage
+
+            raspberryTemperature:
+                systemViewModel.temperature
         }
 
         RowLayout {
@@ -48,34 +60,43 @@ ApplicationWindow {
                 id: navigationMenu
 
                 Layout.fillHeight: true
-                Layout.preferredWidth: Theme.navigationWidth
+                Layout.preferredWidth:
+                    Theme.navigationWidth
 
-                onPageSelected: function(pageIndex, pageName) {
-                    console.log(
-                        "Navigation vers :",
-                        pageName,
-                        "(" + pageIndex + ")"
-                    )
-                }
+                onPageSelected:
+                    function(pageIndex, pageName) {
+                        console.log(
+                            "Navigation vers :",
+                            pageName,
+                            "(" + pageIndex + ")"
+                        )
+                    }
             }
 
             StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                currentIndex: navigationMenu.currentIndex
+                currentIndex:
+                    navigationMenu.currentIndex
 
                 DashboardPage {
-                    statusMessage: applicationViewModel.status_message
+                    statusMessage:
+                        applicationViewModel.status_message
 
-                    onPageRequested: function(pageIndex) {
-                        navigationMenu.currentIndex = pageIndex
-                    }
+                    onPageRequested:
+                        function(pageIndex) {
+                            navigationMenu.currentIndex =
+                                pageIndex
+                        }
                 }
 
                 ModulePlaceholder {
                     title: "Véhicule"
-                    description: "Informations générales et état du véhicule"
+
+                    description:
+                        "Informations générales "
+                        + "et état du véhicule"
                 }
 
                 CanBusPage {
@@ -83,35 +104,52 @@ ApplicationWindow {
 
                 ModulePlaceholder {
                     title: "Diagnostics"
-                    description: "Lecture des défauts et analyse du véhicule"
+
+                    description:
+                        "Lecture des défauts "
+                        + "et analyse du véhicule"
                 }
 
                 ModulePlaceholder {
                     title: "Historique"
-                    description: "Trajets, événements et statistiques"
+
+                    description:
+                        "Trajets, événements "
+                        + "et statistiques"
                 }
 
                 ModulePlaceholder {
                     title: "Paramètres"
-                    description: "Configuration générale d’OmegaOS"
+
+                    description:
+                        "Configuration générale "
+                        + "d’OmegaOS"
                 }
             }
         }
 
         StatusBar {
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.statusBarHeight
+            Layout.preferredHeight:
+                Theme.statusBarHeight
 
-            statusMessage: canBusViewModel.connected
-                           ? "Réception CAN active"
-                           : applicationViewModel.status_message
+            statusMessage:
+                canBusViewModel.status_message
 
-            hardwareName: systemViewModel.hostname
-            operatingSystem: systemViewModel.operating_system
-            pythonVersion: systemViewModel.python_version
-            qtVersion: "Qt / PySide6"
+            hardwareName:
+                systemViewModel.hostname
 
-            canConnected: canBusViewModel.connected
+            operatingSystem:
+                systemViewModel.operating_system
+
+            pythonVersion:
+                systemViewModel.python_version
+
+            qtVersion:
+                "Qt / PySide6"
+
+            canConnected:
+                canBusViewModel.connected
         }
     }
 }

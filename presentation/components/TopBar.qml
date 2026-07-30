@@ -10,6 +10,7 @@ Rectangle {
     property string applicationVersion: "0.1.0"
 
     property bool canConnected: false
+    property string canMode: "Simulation"
 
     property real cpuUsage: 0.0
     property real memoryUsage: 0.0
@@ -21,7 +22,6 @@ Rectangle {
     )
 
     implicitHeight: Theme.topBarHeight
-
     color: Theme.surface
 
     Rectangle {
@@ -49,7 +49,6 @@ Rectangle {
                 implicitHeight: 42
 
                 radius: 21
-
                 color: Theme.accentSoft
 
                 border.width: Theme.borderWidth
@@ -61,6 +60,7 @@ Rectangle {
                     text: "Ω"
                     color: Theme.accent
 
+                    font.family: "Segoe UI"
                     font.pixelSize: 25
                     font.bold: true
                 }
@@ -73,14 +73,18 @@ Rectangle {
                     text: root.applicationName
                     color: Theme.textPrimary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontLarge
                     font.bold: true
                 }
 
                 Text {
-                    text: "Version " + root.applicationVersion
+                    text: "Version "
+                          + root.applicationVersion
+
                     color: Theme.textMuted
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontTiny
                 }
             }
@@ -132,19 +136,23 @@ Rectangle {
 
                         color: Theme.textMuted
 
+                        font.family: "Segoe UI"
                         font.pixelSize: Theme.fontTiny
                         font.bold: true
                     }
 
                     Text {
-                        text: root.canConnected
-                              ? "Connecté"
-                              : "Déconnecté"
+                        text: (
+                            root.canConnected
+                            ? "Connecté"
+                            : "Déconnecté"
+                        ) + " · " + root.canMode
 
                         color: root.canConnected
                                ? Theme.success
                                : Theme.textSecondary
 
+                        font.family: "Segoe UI"
                         font.pixelSize: Theme.fontSmall
                     }
                 }
@@ -153,7 +161,6 @@ Rectangle {
             Rectangle {
                 Layout.preferredWidth: 1
                 Layout.preferredHeight: 30
-
                 color: Theme.border
             }
 
@@ -162,18 +169,18 @@ Rectangle {
 
                 Text {
                     text: "CPU"
-
                     color: Theme.textMuted
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontTiny
                     font.bold: true
                 }
 
                 Text {
                     text: root.cpuUsage.toFixed(1) + " %"
-
                     color: Theme.textSecondary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontSmall
                 }
             }
@@ -181,7 +188,6 @@ Rectangle {
             Rectangle {
                 Layout.preferredWidth: 1
                 Layout.preferredHeight: 30
-
                 color: Theme.border
             }
 
@@ -190,18 +196,18 @@ Rectangle {
 
                 Text {
                     text: "MÉMOIRE"
-
                     color: Theme.textMuted
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontTiny
                     font.bold: true
                 }
 
                 Text {
                     text: root.memoryUsage.toFixed(1) + " %"
-
                     color: Theme.textSecondary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontSmall
                 }
             }
@@ -209,7 +215,6 @@ Rectangle {
             Rectangle {
                 Layout.preferredWidth: 1
                 Layout.preferredHeight: 30
-
                 color: Theme.border
             }
 
@@ -218,16 +223,17 @@ Rectangle {
 
                 Text {
                     text: "TEMPÉRATURE"
-
                     color: Theme.textMuted
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontTiny
                     font.bold: true
                 }
 
                 Text {
                     text: root.raspberryTemperature >= 0
-                          ? root.raspberryTemperature.toFixed(1) + " °C"
+                          ? root.raspberryTemperature
+                                .toFixed(1) + " °C"
                           : "Indisponible"
 
                     color: root.raspberryTemperature >= 70
@@ -236,6 +242,7 @@ Rectangle {
                              ? Theme.warning
                              : Theme.textSecondary
 
+                    font.family: "Segoe UI"
                     font.pixelSize: Theme.fontSmall
                 }
             }
@@ -243,15 +250,14 @@ Rectangle {
             Rectangle {
                 Layout.preferredWidth: 1
                 Layout.preferredHeight: 30
-
                 color: Theme.border
             }
 
             Text {
                 text: root.currentTime
-
                 color: Theme.textPrimary
 
+                font.family: "Segoe UI"
                 font.pixelSize: Theme.fontLarge
                 font.bold: true
             }

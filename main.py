@@ -1,4 +1,5 @@
 from __future__ import annotations
+from core.application import OmegaApplication
 
 import os
 import sys
@@ -9,12 +10,11 @@ import sys
 #
 # Basic est entièrement personnalisable et cohérent sur Windows,
 # Linux et Raspberry Pi.
+
 os.environ.setdefault(
     "QT_QUICK_CONTROLS_STYLE",
     "Basic",
 )
-
-from core.application import OmegaApplication
 
 
 def main() -> int:

@@ -13,7 +13,7 @@ from services.can_bus_service import CanBusService
 
 class CanBusViewModel(QObject):
     """
-    Expose l'état du bus CAN à l'interface QML.
+    Expose le service CAN à l'interface QML.
     """
 
     dataChanged = Signal()
@@ -22,19 +22,30 @@ class CanBusViewModel(QObject):
         super().__init__()
 
         self._service = CanBusService(
-            simulation_enabled=True
+            mode=CanBusService.MODE_SIMULATION,
+            interface_name="can0",
+            bitrate=500_000,
         )
 
-        initial_state = self._service.get_state()
+        self._auto_connect = False
 
-        self._connected = initial_state.connected
-        self._mode = initial_state.mode
-        self._interface_name = initial_state.interface_name
-        self._bitrate = initial_state.bitrate
-        self._frames_received = initial_state.frames_received
-        self._frames_per_second = initial_state.frames_per_second
-        self._last_frame = initial_state.last_frame
-        self._last_update = initial_state.last_update
+        self._connected = False
+        self._mode = CanBusService.MODE_SIMULATION
+        self._interface_name = "can0"
+        self._bitrate = 500_000
+
+        self._frames_received = 0
+        self._frames_per_second = 0
+
+        self._last_frame = "Aucune trame"
+        self._last_frame_id = "--"
+        self._last_frame_data = "--"
+        self._last_frame_dlc = 0
+        self._last_frame_time = "--:--:--.---"
+
+        self._last_update = "--:--:--"
+        self._status_message = "Bus CAN déconnecté"
+        self._error_message = ""
 
         self._timer = QTimer(self)
         self._timer.setInterval(1000)
@@ -43,51 +54,132 @@ class CanBusViewModel(QObject):
         )
         self._timer.start()
 
+        self._apply_state(
+            self._service.get_state()
+        )
+
     @Slot()
     def connect_bus(self) -> None:
-        """
-        Connecte le bus CAN.
-        """
-
         self._service.connect()
-        self.update_can_information()
+        self._apply_state(
+            self._service.get_state()
+        )
 
     @Slot()
     def disconnect_bus(self) -> None:
-        """
-        Déconnecte le bus CAN.
-        """
-
         self._service.disconnect()
-        self.update_can_information()
+        self._apply_state(
+            self._service.get_state()
+        )
 
     @Slot()
     def toggle_connection(self) -> None:
-        """
-        Inverse l'état actuel de la connexion.
-        """
-
         if self._connected:
             self.disconnect_bus()
         else:
             self.connect_bus()
 
+    @Slot(str)
+    def set_mode(self, mode: str) -> None:
+        try:
+            self._service.set_mode(mode)
+        except ValueError as error:
+            self._error_message = str(error)
+            self.dataChanged.emit()
+            return
+
+        self._apply_state(
+            self._service.get_state()
+        )
+
+    @Slot(str)
+    def set_interface_name(
+        self,
+        interface_name: str,
+    ) -> None:
+        try:
+            self._service.set_interface_name(
+                interface_name
+            )
+        except ValueError as error:
+            self._error_message = str(error)
+            self.dataChanged.emit()
+            return
+
+        self._apply_state(
+            self._service.get_state()
+        )
+
+    @Slot(int)
+    def set_bitrate(self, bitrate: int) -> None:
+        try:
+            self._service.set_bitrate(bitrate)
+        except ValueError as error:
+            self._error_message = str(error)
+            self.dataChanged.emit()
+            return
+
+        self._apply_state(
+            self._service.get_state()
+        )
+
+    @Slot(bool)
+    def set_auto_connect(
+        self,
+        enabled: bool,
+    ) -> None:
+        self._auto_connect = enabled
+        self.dataChanged.emit()
+
+    @Slot()
+    def clear_history(self) -> None:
+        self._service.clear_history()
+        self._apply_state(
+            self._service.get_state()
+        )
+
     @Slot()
     def update_can_information(self) -> None:
-        """
-        Actualise les informations exposées à QML.
-        """
-
         state = self._service.update()
+        self._apply_state(state)
 
+    def _apply_state(self, state) -> None:
         self._connected = state.connected
         self._mode = state.mode
         self._interface_name = state.interface_name
         self._bitrate = state.bitrate
-        self._frames_received = state.frames_received
-        self._frames_per_second = state.frames_per_second
-        self._last_frame = state.last_frame
+
+        self._frames_received = (
+            state.frames_received
+        )
+        self._frames_per_second = (
+            state.frames_per_second
+        )
+
         self._last_update = state.last_update
+        self._status_message = (
+            state.status_message
+        )
+        self._error_message = (
+            state.error_message
+        )
+
+        frame = state.last_frame
+
+        if frame is None:
+            self._last_frame = "Aucune trame"
+            self._last_frame_id = "--"
+            self._last_frame_data = "--"
+            self._last_frame_dlc = 0
+            self._last_frame_time = "--:--:--.---"
+        else:
+            self._last_frame = frame.formatted
+            self._last_frame_id = frame.hex_id
+            self._last_frame_data = frame.data_hex
+            self._last_frame_dlc = frame.dlc
+            self._last_frame_time = (
+                frame.formatted_time
+            )
 
         self.dataChanged.emit()
 
@@ -97,11 +189,26 @@ class CanBusViewModel(QObject):
 
     @Property(str, notify=dataChanged)
     def connection_status(self) -> str:
-        return "Connecté" if self._connected else "Déconnecté"
+        return (
+            "Connecté"
+            if self._connected
+            else "Déconnecté"
+        )
 
     @Property(str, notify=dataChanged)
     def mode(self) -> str:
         return self._mode
+
+    @Property(str, notify=dataChanged)
+    def display_mode(self) -> str:
+        if self._mode == CanBusService.MODE_SOCKETCAN:
+            return "SocketCAN"
+
+        return "Simulation"
+
+    @Property(bool, notify=dataChanged)
+    def socketcan_available(self) -> bool:
+        return self._service.is_socketcan_available()
 
     @Property(str, notify=dataChanged)
     def interface_name(self) -> str:
@@ -113,7 +220,11 @@ class CanBusViewModel(QObject):
 
     @Property(str, notify=dataChanged)
     def formatted_bitrate(self) -> str:
-        return f"{self._bitrate // 1000} kbit/s"
+        return self._service.get_formatted_bitrate()
+
+    @Property(bool, notify=dataChanged)
+    def auto_connect(self) -> bool:
+        return self._auto_connect
 
     @Property(int, notify=dataChanged)
     def frames_received(self) -> int:
@@ -128,5 +239,29 @@ class CanBusViewModel(QObject):
         return self._last_frame
 
     @Property(str, notify=dataChanged)
+    def last_frame_id(self) -> str:
+        return self._last_frame_id
+
+    @Property(str, notify=dataChanged)
+    def last_frame_data(self) -> str:
+        return self._last_frame_data
+
+    @Property(int, notify=dataChanged)
+    def last_frame_dlc(self) -> int:
+        return self._last_frame_dlc
+
+    @Property(str, notify=dataChanged)
+    def last_frame_time(self) -> str:
+        return self._last_frame_time
+
+    @Property(str, notify=dataChanged)
     def last_update(self) -> str:
         return self._last_update
+
+    @Property(str, notify=dataChanged)
+    def status_message(self) -> str:
+        return self._status_message
+
+    @Property(str, notify=dataChanged)
+    def error_message(self) -> str:
+        return self._error_message

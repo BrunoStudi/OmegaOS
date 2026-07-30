@@ -1,9 +1,7 @@
 from __future__ import annotations
-
 from core.logger import setup_logger
 from core.settings import SettingsManager
 from presentation.main_window import MainWindow
-
 
 class OmegaApplication:
     """
