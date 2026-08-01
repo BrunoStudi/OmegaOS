@@ -60,6 +60,7 @@ ApplicationWindow {
                 id: navigationMenu
 
                 Layout.fillHeight: true
+
                 Layout.preferredWidth:
                     Theme.navigationWidth
 
@@ -110,12 +111,7 @@ ApplicationWindow {
                         + "et analyse du véhicule"
                 }
 
-                ModulePlaceholder {
-                    title: "Historique"
-
-                    description:
-                        "Trajets, événements "
-                        + "et statistiques"
+                HistoryPage {
                 }
 
                 ModulePlaceholder {
@@ -130,6 +126,7 @@ ApplicationWindow {
 
         StatusBar {
             Layout.fillWidth: true
+
             Layout.preferredHeight:
                 Theme.statusBarHeight
 
