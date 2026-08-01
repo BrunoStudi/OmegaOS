@@ -114,12 +114,7 @@ ApplicationWindow {
                 HistoryPage {
                 }
 
-                ModulePlaceholder {
-                    title: "Paramètres"
-
-                    description:
-                        "Configuration générale "
-                        + "d’OmegaOS"
+                SettingsPage {
                 }
             }
         }

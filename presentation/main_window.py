@@ -18,23 +18,26 @@ from presentation.viewmodels.can_bus_viewmodel import (
 from presentation.viewmodels.system_viewmodel import (
     SystemViewModel,
 )
+from presentation.viewmodels.voice_viewmodel import (
+    VoiceViewModel,
+)
 
 
 class MainWindow:
     """
-    Gère l'application Qt, les ViewModels et le chargement
-    de l'interface QML.
+    Gère l'application Qt, les ViewModels
+    et le chargement de l'interface QML.
     """
 
-    def __init__(self, settings: SettingsManager) -> None:
+    def __init__(
+        self,
+        settings: SettingsManager,
+    ) -> None:
         self._logger = setup_logger()
         self._settings = settings
 
         self._app = QGuiApplication(sys.argv)
 
-        # Police disponible nativement sous Windows.
-        # Sur Linux et Raspberry Pi, Qt choisira une police de remplacement
-        # si Segoe UI n'est pas installée.
         self._app.setFont(
             QFont(
                 "Segoe UI",
@@ -44,12 +47,25 @@ class MainWindow:
 
         self._engine = QQmlApplicationEngine()
 
-        self._application_viewmodel = ApplicationViewModel(
-            self._settings
+        self._application_viewmodel = (
+            ApplicationViewModel(
+                self._settings
+            )
         )
 
-        self._system_viewmodel = SystemViewModel()
-        self._can_bus_viewmodel = CanBusViewModel()
+        self._system_viewmodel = (
+            SystemViewModel()
+        )
+
+        self._can_bus_viewmodel = (
+            CanBusViewModel()
+        )
+
+        self._voice_viewmodel = (
+            VoiceViewModel(
+                self._settings
+            )
+        )
 
         context = self._engine.rootContext()
 
@@ -68,9 +84,14 @@ class MainWindow:
             self._can_bus_viewmodel,
         )
 
+        context.setContextProperty(
+            "voiceViewModel",
+            self._voice_viewmodel,
+        )
+
     def run(self) -> int:
         """
-        Charge Main.qml puis démarre la boucle événementielle Qt.
+        Charge Main.qml puis démarre Qt.
         """
 
         qml_file = (
@@ -85,7 +106,9 @@ class MainWindow:
         )
 
         self._engine.load(
-            QUrl.fromLocalFile(str(qml_file))
+            QUrl.fromLocalFile(
+                str(qml_file)
+            )
         )
 
         if not self._engine.rootObjects():
