@@ -42,13 +42,13 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
 
+            implicitHeight: 520
+
             radius: Theme.radiusMedium
             color: Theme.surface
 
             border.width: Theme.borderWidth
             border.color: Theme.border
-
-            implicitHeight: 390
 
             ColumnLayout {
                 anchors.fill: parent
@@ -135,6 +135,8 @@ Rectangle {
                     ColumnLayout {
                         Layout.fillWidth: true
 
+                        spacing: Theme.spacingTiny
+
                         Text {
                             text: "Activer les annonces"
 
@@ -146,13 +148,14 @@ Rectangle {
                         }
 
                         Text {
-                            text: "OmegaOS annoncera uniquement "
-                                  + "les nouvelles alertes importantes."
+                            text: "OmegaOS annoncera uniquement les nouvelles alertes importantes."
 
                             color: Theme.textMuted
 
                             font.family: "Segoe UI"
                             font.pixelSize: Theme.fontSmall
+
+                            wrapMode: Text.WordWrap
                         }
                     }
 
@@ -169,8 +172,99 @@ Rectangle {
                     }
                 }
 
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+
+                        spacing: Theme.spacingTiny
+
+                        Text {
+                            text: "Annoncer les avertissements"
+
+                            color: Theme.textPrimary
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontNormal
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: "Carburant faible, température élevée et batterie faible."
+
+                            color: Theme.textMuted
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontSmall
+
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+
+                    Switch {
+                        checked: voiceViewModel.announce_warnings
+
+                        enabled:
+                            voiceViewModel.available
+                            && voiceViewModel.enabled
+
+                        onToggled: {
+                            voiceViewModel.set_announce_warnings(
+                                checked
+                            )
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+
+                        spacing: Theme.spacingTiny
+
+                        Text {
+                            text: "Annoncer les alertes critiques"
+
+                            color: Theme.textPrimary
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontNormal
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: "Surchauffe moteur et tension batterie critique."
+
+                            color: Theme.textMuted
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontSmall
+
+                            wrapMode: Text.WordWrap
+                        }
+                    }
+
+                    Switch {
+                        checked: voiceViewModel.announce_critical
+
+                        enabled:
+                            voiceViewModel.available
+                            && voiceViewModel.enabled
+
+                        onToggled: {
+                            voiceViewModel.set_announce_critical(
+                                checked
+                            )
+                        }
+                    }
+                }
+
                 ColumnLayout {
                     Layout.fillWidth: true
+
                     spacing: Theme.spacingSmall
 
                     RowLayout {
@@ -225,6 +319,7 @@ Rectangle {
 
                 ColumnLayout {
                     Layout.fillWidth: true
+
                     spacing: Theme.spacingSmall
 
                     RowLayout {
@@ -244,8 +339,7 @@ Rectangle {
                         }
 
                         Text {
-                            text: voiceRateSlider.value
-                                .toFixed(2)
+                            text: voiceRateSlider.value.toFixed(2)
 
                             color: Theme.accent
 
@@ -282,7 +376,12 @@ Rectangle {
                     spacing: Theme.spacingMedium
 
                     Button {
+                        id: testVoiceButton
+
                         text: "Tester la voix"
+
+                        implicitWidth: 130
+                        implicitHeight: 38
 
                         enabled:
                             voiceViewModel.available
@@ -291,16 +390,78 @@ Rectangle {
                         onClicked: {
                             voiceViewModel.test_voice()
                         }
+
+                        contentItem: Text {
+                            text: testVoiceButton.text
+
+                            color: testVoiceButton.enabled
+                                   ? Theme.textPrimary
+                                   : Theme.textDisabled
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontSmall
+                            font.bold: true
+
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        background: Rectangle {
+                            radius: Theme.radiusSmall
+
+                            color: testVoiceButton.enabled
+                                   ? Theme.accentSoft
+                                   : Theme.surfaceAlternative
+
+                            border.width: Theme.borderWidth
+
+                            border.color: testVoiceButton.enabled
+                                          ? Theme.borderSelected
+                                          : Theme.border
+                        }
                     }
 
                     Button {
+                        id: stopVoiceButton
+
                         text: "Arrêter"
 
-                        enabled:
-                            voiceViewModel.available
+                        implicitWidth: 100
+                        implicitHeight: 38
+
+                        enabled: voiceViewModel.available
 
                         onClicked: {
                             voiceViewModel.stop_voice()
+                        }
+
+                        contentItem: Text {
+                            text: stopVoiceButton.text
+
+                            color: stopVoiceButton.enabled
+                                   ? Theme.textPrimary
+                                   : Theme.textDisabled
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontSmall
+                            font.bold: true
+
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+
+                        background: Rectangle {
+                            radius: Theme.radiusSmall
+
+                            color: stopVoiceButton.enabled
+                                   ? Theme.dangerBackground
+                                   : Theme.surfaceAlternative
+
+                            border.width: Theme.borderWidth
+
+                            border.color: stopVoiceButton.enabled
+                                          ? Theme.dangerBorder
+                                          : Theme.border
                         }
                     }
 
@@ -312,6 +473,8 @@ Rectangle {
                         spacing: Theme.spacingTiny
 
                         Text {
+                            Layout.alignment: Qt.AlignRight
+
                             text: voiceViewModel.engine_name
 
                             color: Theme.textSecondary
@@ -323,6 +486,8 @@ Rectangle {
                         }
 
                         Text {
+                            Layout.alignment: Qt.AlignRight
+
                             text: voiceViewModel.status_message
 
                             color: voiceViewModel.available

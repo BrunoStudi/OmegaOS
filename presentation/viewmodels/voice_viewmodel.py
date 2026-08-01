@@ -13,7 +13,7 @@ from services.voice_service import VoiceService
 
 class VoiceViewModel(QObject):
     """
-    Expose les réglages de la synthèse vocale à QML.
+    Expose les réglages et les annonces vocales à QML.
     """
 
     dataChanged = Signal()
@@ -36,6 +36,22 @@ class VoiceViewModel(QObject):
             )
         )
 
+        self._announce_warnings = bool(
+            self._settings.get(
+                "voice",
+                "announce_warnings",
+                True,
+            )
+        )
+
+        self._announce_critical = bool(
+            self._settings.get(
+                "voice",
+                "announce_critical",
+                True,
+            )
+        )
+
         self._volume = float(
             self._settings.get(
                 "voice",
@@ -52,12 +68,8 @@ class VoiceViewModel(QObject):
             )
         )
 
-        self._service.set_volume(
-            self._volume
-        )
-        self._service.set_rate(
-            self._rate
-        )
+        self._service.set_volume(self._volume)
+        self._service.set_rate(self._rate)
 
         self._service.stateChanged.connect(
             self.dataChanged.emit
@@ -67,11 +79,46 @@ class VoiceViewModel(QObject):
             self._on_service_error
         )
 
-    @Slot(bool)
-    def set_enabled(
+    @Slot(str, str, str)
+    def announce_alert(
         self,
-        enabled: bool,
+        severity: str,
+        title: str,
+        message: str,
     ) -> None:
+        """
+        Annonce une nouvelle alerte selon sa gravité et les réglages.
+        """
+
+        if not self._enabled or not self._service.available:
+            return
+
+        if (
+            severity == "critical"
+            and not self._announce_critical
+        ):
+            return
+
+        if (
+            severity == "warning"
+            and not self._announce_warnings
+        ):
+            return
+
+        prefix = (
+            "Attention."
+            if severity == "critical"
+            else "Information."
+        )
+
+        self._service.speak(
+            f"{prefix} {title}. {message}"
+        )
+
+        self.dataChanged.emit()
+
+    @Slot(bool)
+    def set_enabled(self, enabled: bool) -> None:
         self._enabled = bool(enabled)
 
         self._settings.set(
@@ -86,19 +133,46 @@ class VoiceViewModel(QObject):
 
         self.dataChanged.emit()
 
-    @Slot(float)
-    def set_volume(
+    @Slot(bool)
+    def set_announce_warnings(
         self,
-        volume: float,
+        enabled: bool,
     ) -> None:
+        self._announce_warnings = bool(enabled)
+
+        self._settings.set(
+            section="voice",
+            key="announce_warnings",
+            value=self._announce_warnings,
+            save=True,
+        )
+
+        self.dataChanged.emit()
+
+    @Slot(bool)
+    def set_announce_critical(
+        self,
+        enabled: bool,
+    ) -> None:
+        self._announce_critical = bool(enabled)
+
+        self._settings.set(
+            section="voice",
+            key="announce_critical",
+            value=self._announce_critical,
+            save=True,
+        )
+
+        self.dataChanged.emit()
+
+    @Slot(float)
+    def set_volume(self, volume: float) -> None:
         self._volume = max(
             0.0,
             min(1.0, float(volume)),
         )
 
-        self._service.set_volume(
-            self._volume
-        )
+        self._service.set_volume(self._volume)
 
         self._settings.set(
             section="voice",
@@ -110,18 +184,13 @@ class VoiceViewModel(QObject):
         self.dataChanged.emit()
 
     @Slot(float)
-    def set_rate(
-        self,
-        rate: float,
-    ) -> None:
+    def set_rate(self, rate: float) -> None:
         self._rate = max(
             -1.0,
             min(1.0, float(rate)),
         )
 
-        self._service.set_rate(
-            self._rate
-        )
+        self._service.set_rate(self._rate)
 
         self._settings.set(
             section="voice",
@@ -149,22 +218,6 @@ class VoiceViewModel(QObject):
         self._service.stop()
         self.dataChanged.emit()
 
-    def speak_alert(
-        self,
-        title: str,
-        message: str,
-    ) -> bool:
-        """
-        Sera utilisé à l'étape suivante par les alertes.
-        """
-
-        if not self._enabled:
-            return False
-
-        return self._service.speak(
-            f"{title}. {message}"
-        )
-
     def _on_service_error(
         self,
         _message: str,
@@ -178,6 +231,14 @@ class VoiceViewModel(QObject):
     @Property(bool, notify=dataChanged)
     def available(self) -> bool:
         return self._service.available
+
+    @Property(bool, notify=dataChanged)
+    def announce_warnings(self) -> bool:
+        return self._announce_warnings
+
+    @Property(bool, notify=dataChanged)
+    def announce_critical(self) -> bool:
+        return self._announce_critical
 
     @Property(float, notify=dataChanged)
     def volume(self) -> float:

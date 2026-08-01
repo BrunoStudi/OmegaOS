@@ -61,10 +61,12 @@ class MainWindow:
             CanBusViewModel()
         )
 
-        self._voice_viewmodel = (
-            VoiceViewModel(
-                self._settings
-            )
+        self._voice_viewmodel = VoiceViewModel(
+            self._settings
+        )
+
+        self._can_bus_viewmodel.alertCreated.connect(
+            self._voice_viewmodel.announce_alert
         )
 
         context = self._engine.rootContext()

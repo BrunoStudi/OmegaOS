@@ -21,7 +21,9 @@
     },
     "voice": {
         "enabled": true,
-        "volume": 0.9,
+        "announce_warnings": true,
+        "announce_critical": true,
+        "volume": 1.0,
         "rate": 0.0
     },
     "logging": {

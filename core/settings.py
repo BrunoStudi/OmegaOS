@@ -29,8 +29,10 @@ DEFAULT_SETTINGS: dict[str, Any] = {
         "interface": "can0",
         "bitrate": 500000,
     },
-        "voice": {
+    "voice": {
         "enabled": False,
+        "announce_warnings": True,
+        "announce_critical": True,
         "volume": 0.85,
         "rate": -0.10,
     },

@@ -25,6 +25,12 @@ class CanBusViewModel(QObject):
 
     dataChanged = Signal()
 
+    alertCreated = Signal(
+        str,  # gravité
+        str,  # titre
+        str,  # message
+    )
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -573,6 +579,12 @@ class CanBusViewModel(QObject):
                 "source": source,
                 "acknowledged": False,
             }
+        )
+
+        self.alertCreated.emit(
+            severity,
+            title,
+            message,
         )
 
     def _set_no_active_alert(self) -> None:
