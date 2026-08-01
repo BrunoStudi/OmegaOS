@@ -16,9 +16,6 @@ Rectangle {
 
         spacing: Theme.spacingMedium
 
-        /*
-         * En-tête
-         */
         RowLayout {
             Layout.fillWidth: true
 
@@ -27,7 +24,6 @@ Rectangle {
 
                 Text {
                     text: "Historique"
-
                     color: Theme.textPrimary
 
                     font.family: "Segoe UI"
@@ -37,7 +33,6 @@ Rectangle {
 
                 Text {
                     text: "Événements et données enregistrés par OmegaOS"
-
                     color: Theme.textSecondary
 
                     font.family: "Segoe UI"
@@ -74,7 +69,6 @@ Rectangle {
                     Rectangle {
                         implicitWidth: 9
                         implicitHeight: 9
-
                         radius: 5
 
                         color: canBusViewModel.connected
@@ -99,14 +93,10 @@ Rectangle {
             }
         }
 
-        /*
-         * Résumé
-         */
         GridLayout {
             Layout.fillWidth: true
 
             columns: 4
-
             columnSpacing: Theme.spacingMedium
             rowSpacing: Theme.spacingMedium
 
@@ -115,7 +105,6 @@ Rectangle {
                 Layout.preferredHeight: 112
 
                 title: "TRAMES REÇUES"
-
                 value: canBusViewModel.frames_received.toString()
 
                 subtitle: canBusViewModel.connected
@@ -131,7 +120,6 @@ Rectangle {
                 Layout.preferredHeight: 112
 
                 title: "MODE D’ACQUISITION"
-
                 value: canBusViewModel.display_mode
 
                 subtitle: canBusViewModel.mode === "simulation"
@@ -147,130 +135,147 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 112
 
-                title: "DERNIÈRE TRAME"
+                title: "ALERTES ENREGISTRÉES"
+                value: canBusViewModel.alert_count.toString()
 
-                value: canBusViewModel.last_frame_id
+                subtitle: "Journal véhicule"
 
-                subtitle: canBusViewModel.last_frame_time
-
-                accentColor: Theme.success
+                accentColor: Theme.warning
             }
 
             InfoCard {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 112
 
-                title: "ALERTES VÉHICULE"
+                title: "NON ACQUITTÉES"
 
-                value: "0"
+                value:
+                    canBusViewModel.unacknowledged_alert_count
+                        .toString()
 
-                subtitle: "Journal des alertes à venir"
+                subtitle:
+                    canBusViewModel.unacknowledged_alert_count > 0
+                    ? "Vérification nécessaire"
+                    : "Aucune action requise"
 
-                accentColor: Theme.disconnected
+                accentColor:
+                    canBusViewModel.unacknowledged_alert_count > 0
+                    ? Theme.danger
+                    : Theme.success
             }
         }
 
-        /*
-         * Sélection de la catégorie d’historique
-         */
         TabBar {
             id: historyTabs
 
             Layout.fillWidth: true
             Layout.preferredHeight: 42
 
-            background: Rectangle {
-                color: Theme.surface
-
-                radius: Theme.radiusSmall
-
-                border.width: Theme.borderWidth
-                border.color: Theme.border
-            }
-
             TabButton {
-                id: canHistoryTab
-
                 text: "Trames CAN"
-
-                contentItem: Text {
-                    text: canHistoryTab.text
-
-                    color: historyTabs.currentIndex === 0
-                           ? Theme.accent
-                           : Theme.textSecondary
-
-                    font.family: "Segoe UI"
-                    font.pixelSize: Theme.fontNormal
-                    font.bold: historyTabs.currentIndex === 0
-
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                background: Rectangle {
-                    color: historyTabs.currentIndex === 0
-                           ? Theme.accentSoft
-                           : "transparent"
-
-                    radius: Theme.radiusSmall
-
-                    border.width: historyTabs.currentIndex === 0
-                                  ? Theme.borderWidth
-                                  : 0
-
-                    border.color: Theme.borderSelected
-                }
             }
 
             TabButton {
-                id: alertHistoryTab
-
                 text: "Alertes véhicule"
-
-                contentItem: Text {
-                    text: alertHistoryTab.text
-
-                    color: historyTabs.currentIndex === 1
-                           ? Theme.accent
-                           : Theme.textSecondary
-
-                    font.family: "Segoe UI"
-                    font.pixelSize: Theme.fontNormal
-                    font.bold: historyTabs.currentIndex === 1
-
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
-                }
-
-                background: Rectangle {
-                    color: historyTabs.currentIndex === 1
-                           ? Theme.accentSoft
-                           : "transparent"
-
-                    radius: Theme.radiusSmall
-
-                    border.width: historyTabs.currentIndex === 1
-                                  ? Theme.borderWidth
-                                  : 0
-
-                    border.color: Theme.borderSelected
-                }
             }
         }
 
-        /*
-         * Contenu des onglets
-         */
         StackLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
             currentIndex: historyTabs.currentIndex
 
-            /*
-             * Historique CAN
-             */
+            Rectangle {
+                radius: Theme.radiusMedium
+                color: Theme.surface
+
+                border.width: Theme.borderWidth
+                border.color: Theme.border
+
+                ColumnLayout {
+                    anchors.fill: parent
+                    anchors.margins: Theme.spacingLarge
+
+                    spacing: Theme.spacingNormal
+
+                    RowLayout {
+                        Layout.fillWidth: true
+
+                        Text {
+                            text: "Historique des trames CAN"
+                            color: Theme.textPrimary
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontLarge
+                            font.bold: true
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                        }
+
+                        Button {
+                            text: canBusViewModel.display_paused
+                                  ? "Reprendre"
+                                  : "Pause"
+
+                            enabled: canBusViewModel.connected
+
+                            onClicked: {
+                                canBusViewModel.toggle_display_pause()
+                            }
+                        }
+
+                        Button {
+                            text: "Vider"
+
+                            enabled:
+                                canBusViewModel.frames_received > 0
+
+                            onClicked: {
+                                canBusViewModel.clear_history()
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+
+                        radius: Theme.radiusSmall
+                        color: "#030508"
+
+                        border.width: Theme.borderWidth
+                        border.color: Theme.border
+
+                        ScrollView {
+                            anchors.fill: parent
+                            clip: true
+
+                            TextArea {
+                                text: canBusViewModel.history_text
+
+                                readOnly: true
+                                selectByMouse: true
+                                wrapMode: TextEdit.NoWrap
+
+                                color: Theme.textSecondary
+
+                                font.family: "Consolas"
+                                font.pixelSize: Theme.fontSmall
+
+                                padding: Theme.spacingNormal
+
+                                background: Rectangle {
+                                    color: "transparent"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             Rectangle {
                 radius: Theme.radiusMedium
                 color: Theme.surface
@@ -291,8 +296,7 @@ Rectangle {
                             spacing: Theme.spacingTiny
 
                             Text {
-                                text: "Historique des trames CAN"
-
+                                text: "Historique des alertes véhicule"
                                 color: Theme.textPrimary
 
                                 font.family: "Segoe UI"
@@ -301,13 +305,11 @@ Rectangle {
                             }
 
                             Text {
-                                text: canBusViewModel.display_paused
-                                      ? "Affichage actuellement figé"
-                                      : "Les 200 dernières trames reçues"
+                                text:
+                                    canBusViewModel.alert_count
+                                    + " événement(s) enregistré(s)"
 
-                                color: canBusViewModel.display_paused
-                                       ? Theme.warning
-                                       : Theme.textMuted
+                                color: Theme.textMuted
 
                                 font.family: "Segoe UI"
                                 font.pixelSize: Theme.fontSmall
@@ -319,25 +321,24 @@ Rectangle {
                         }
 
                         Button {
-                            id: pauseHistoryButton
+                            id: clearAlertsButton
 
-                            text: canBusViewModel.display_paused
-                                  ? "Reprendre"
-                                  : "Pause"
+                            text: "Vider les alertes"
 
-                            implicitWidth: 105
+                            enabled:
+                                canBusViewModel.alert_count > 0
+
+                            implicitWidth: 140
                             implicitHeight: 34
 
-                            enabled: canBusViewModel.connected
-
                             onClicked: {
-                                canBusViewModel.toggle_display_pause()
+                                canBusViewModel.clear_alert_history()
                             }
 
                             contentItem: Text {
-                                text: pauseHistoryButton.text
+                                text: clearAlertsButton.text
 
-                                color: pauseHistoryButton.enabled
+                                color: clearAlertsButton.enabled
                                        ? Theme.textPrimary
                                        : Theme.textDisabled
 
@@ -352,57 +353,13 @@ Rectangle {
                             background: Rectangle {
                                 radius: Theme.radiusSmall
 
-                                color: canBusViewModel.display_paused
-                                       ? Theme.warningBackground
-                                       : Theme.accentSoft
-
-                                border.width: Theme.borderWidth
-
-                                border.color: canBusViewModel.display_paused
-                                              ? Theme.warningBorder
-                                              : Theme.borderSelected
-                            }
-                        }
-
-                        Button {
-                            id: clearHistoryButton
-
-                            text: "Vider"
-
-                            implicitWidth: 90
-                            implicitHeight: 34
-
-                            enabled: canBusViewModel.frames_received > 0
-
-                            onClicked: {
-                                canBusViewModel.clear_history()
-                            }
-
-                            contentItem: Text {
-                                text: clearHistoryButton.text
-
-                                color: clearHistoryButton.enabled
-                                       ? Theme.textPrimary
-                                       : Theme.textDisabled
-
-                                font.family: "Segoe UI"
-                                font.pixelSize: Theme.fontSmall
-                                font.bold: true
-
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-
-                            background: Rectangle {
-                                radius: Theme.radiusSmall
-
-                                color: clearHistoryButton.enabled
+                                color: clearAlertsButton.enabled
                                        ? Theme.dangerBackground
                                        : Theme.surfaceAlternative
 
                                 border.width: Theme.borderWidth
 
-                                border.color: clearHistoryButton.enabled
+                                border.color: clearAlertsButton.enabled
                                               ? Theme.dangerBorder
                                               : Theme.border
                             }
@@ -424,16 +381,7 @@ Rectangle {
                         color: "#030508"
 
                         border.width: Theme.borderWidth
-
-                        border.color: canBusViewModel.display_paused
-                                      ? Theme.warningBorder
-                                      : Theme.border
-
-                        Behavior on border.color {
-                            ColorAnimation {
-                                duration: Theme.animationNormal
-                            }
-                        }
+                        border.color: Theme.border
 
                         ScrollView {
                             anchors.fill: parent
@@ -442,7 +390,8 @@ Rectangle {
                             clip: true
 
                             TextArea {
-                                text: canBusViewModel.history_text
+                                text:
+                                    canBusViewModel.alert_history_text
 
                                 readOnly: true
                                 selectByMouse: true
@@ -472,13 +421,15 @@ Rectangle {
                         Layout.fillWidth: true
 
                         Text {
-                            text: canBusViewModel.display_paused
-                                  ? "La réception continue en arrière-plan."
-                                  : canBusViewModel.status_message
+                            text:
+                                canBusViewModel.unacknowledged_alert_count
+                                + " alerte(s) non acquittée(s)"
 
-                            color: canBusViewModel.display_paused
-                                   ? Theme.warning
-                                   : Theme.textSecondary
+                            color:
+                                canBusViewModel
+                                    .unacknowledged_alert_count > 0
+                                ? Theme.warning
+                                : Theme.success
 
                             font.family: "Segoe UI"
                             font.pixelSize: Theme.fontSmall
@@ -489,165 +440,14 @@ Rectangle {
                         }
 
                         Text {
-                            text: canBusViewModel.frames_received
-                                  + " trames reçues"
+                            text:
+                                "Limite actuelle : 200 événements"
 
                             color: Theme.textMuted
 
                             font.family: "Segoe UI"
                             font.pixelSize: Theme.fontSmall
                         }
-                    }
-                }
-            }
-
-            /*
-             * Futur historique des alertes
-             */
-            Rectangle {
-                radius: Theme.radiusMedium
-                color: Theme.surface
-
-                border.width: Theme.borderWidth
-                border.color: Theme.border
-
-                ColumnLayout {
-                    anchors.fill: parent
-                    anchors.margins: Theme.spacingLarge
-
-                    spacing: Theme.spacingNormal
-
-                    RowLayout {
-                        Layout.fillWidth: true
-
-                        ColumnLayout {
-                            spacing: Theme.spacingTiny
-
-                            Text {
-                                text: "Historique des alertes véhicule"
-
-                                color: Theme.textPrimary
-
-                                font.family: "Segoe UI"
-                                font.pixelSize: Theme.fontLarge
-                                font.bold: true
-                            }
-
-                            Text {
-                                text: "Alertes, avertissements et événements importants"
-
-                                color: Theme.textMuted
-
-                                font.family: "Segoe UI"
-                                font.pixelSize: Theme.fontSmall
-                            }
-                        }
-
-                        Item {
-                            Layout.fillWidth: true
-                        }
-
-                        Rectangle {
-                            implicitWidth: comingSoonText.implicitWidth + 22
-                            implicitHeight: 28
-
-                            radius: 14
-
-                            color: Theme.accentSoft
-
-                            border.width: Theme.borderWidth
-                            border.color: Theme.borderSelected
-
-                            Text {
-                                id: comingSoonText
-
-                                anchors.centerIn: parent
-
-                                text: "PRÊT À ÊTRE CONNECTÉ"
-
-                                color: Theme.accent
-
-                                font.family: "Segoe UI"
-                                font.pixelSize: Theme.fontTiny
-                                font.bold: true
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 1
-
-                        color: Theme.border
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
-                    }
-
-                    Rectangle {
-                        Layout.alignment: Qt.AlignHCenter
-
-                        implicitWidth: 72
-                        implicitHeight: 72
-
-                        radius: 36
-
-                        color: Theme.accentSoft
-
-                        border.width: Theme.borderWidth
-                        border.color: Theme.borderSelected
-
-                        Text {
-                            anchors.centerIn: parent
-
-                            text: "!"
-
-                            color: Theme.accent
-
-                            font.family: "Segoe UI"
-                            font.pixelSize: 34
-                            font.bold: true
-                        }
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-
-                        text: "Aucune alerte enregistrée"
-
-                        color: Theme.textPrimary
-
-                        font.family: "Segoe UI"
-                        font.pixelSize: Theme.fontLarge
-                        font.bold: true
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-
-                        text: "Les alertes simulées et réelles seront conservées ici."
-
-                        color: Theme.textSecondary
-
-                        font.family: "Segoe UI"
-                        font.pixelSize: Theme.fontNormal
-                    }
-
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-
-                        text: "La prochaine étape reliera le bandeau d’alerte "
-                              + "du tableau de bord à ce journal."
-
-                        color: Theme.textMuted
-
-                        font.family: "Segoe UI"
-                        font.pixelSize: Theme.fontSmall
-                    }
-
-                    Item {
-                        Layout.fillHeight: true
                     }
                 }
             }

@@ -10,175 +10,9 @@ Rectangle {
 
     property string statusMessage: "Système initialisé"
 
-    /*
-     * 0 : aucune alerte forcée
-     * 1 : carburant faible
-     * 2 : batterie faible
-     * 3 : température élevée
-     */
-    property int demoAlertIndex: 0
-
-    /*
-     * Permet d'acquitter visuellement une alerte.
-     * Une nouvelle variation de l'état véhicule la réactivera plus tard
-     * lorsque nous connecterons un véritable gestionnaire d'alertes.
-     */
-    property bool alertAcknowledged: false
-
     signal pageRequested(int pageIndex)
 
     color: Theme.background
-
-    readonly property bool realTemperatureAlert:
-        canBusViewModel.connected
-        && canBusViewModel.coolant_temperature >= 95
-
-    readonly property bool realBatteryAlert:
-        canBusViewModel.connected
-        && canBusViewModel.battery_voltage < 12.3
-
-    readonly property bool realFuelAlert:
-        canBusViewModel.connected
-        && canBusViewModel.fuel_level <= 20
-
-    readonly property bool hasRealAlert:
-        realTemperatureAlert
-        || realBatteryAlert
-        || realFuelAlert
-
-    readonly property bool hasDemoAlert:
-        demoAlertIndex > 0
-
-    readonly property bool alertActive:
-        !alertAcknowledged
-        && (hasRealAlert || hasDemoAlert)
-
-    readonly property string alertSeverity: {
-        if (demoAlertIndex === 3) {
-            return "critical"
-        }
-
-        if (demoAlertIndex === 2) {
-            return "critical"
-        }
-
-        if (demoAlertIndex === 1) {
-            return "warning"
-        }
-
-        if (realTemperatureAlert
-                && canBusViewModel.coolant_temperature >= 105) {
-            return "critical"
-        }
-
-        if (realBatteryAlert
-                && canBusViewModel.battery_voltage < 11.8) {
-            return "critical"
-        }
-
-        return alertActive ? "warning" : "info"
-    }
-
-    readonly property string alertTitle: {
-        if (demoAlertIndex === 3) {
-            return "Température moteur élevée"
-        }
-
-        if (demoAlertIndex === 2) {
-            return "Tension batterie critique"
-        }
-
-        if (demoAlertIndex === 1) {
-            return "Niveau de carburant faible"
-        }
-
-        if (realTemperatureAlert) {
-            return "Température moteur élevée"
-        }
-
-        if (realBatteryAlert) {
-            return "Tension batterie faible"
-        }
-
-        if (realFuelAlert) {
-            return "Niveau de carburant faible"
-        }
-
-        return "Système opérationnel"
-    }
-
-    readonly property string alertMessage: {
-        if (demoAlertIndex === 3) {
-            return "La température moteur a dépassé 105 °C. "
-                   + "Arrêtez le véhicule dès que possible."
-        }
-
-        if (demoAlertIndex === 2) {
-            return "La tension est inférieure à 11,8 V. "
-                   + "Vérifiez la batterie et le circuit de charge."
-        }
-
-        if (demoAlertIndex === 1) {
-            return "Le niveau de carburant est inférieur à 10 %. "
-                   + "Un ravitaillement est conseillé."
-        }
-
-        if (realTemperatureAlert) {
-            return "Température mesurée : "
-                   + canBusViewModel.coolant_temperature.toFixed(1)
-                   + " °C."
-        }
-
-        if (realBatteryAlert) {
-            return "Tension mesurée : "
-                   + canBusViewModel.battery_voltage.toFixed(2)
-                   + " V."
-        }
-
-        if (realFuelAlert) {
-            return "Carburant restant : "
-                   + canBusViewModel.fuel_level.toFixed(1)
-                   + " %."
-        }
-
-        return "Aucune alerte active. Tous les systèmes "
-               + "fonctionnent normalement."
-    }
-
-    readonly property string alertIcon: {
-        if (!alertActive) {
-            return "✓"
-        }
-
-        if (demoAlertIndex === 1 || realFuelAlert) {
-            return "⛽"
-        }
-
-        if (demoAlertIndex === 2 || realBatteryAlert) {
-            return "⚡"
-        }
-
-        return "!"
-    }
-
-    function selectNextDemoAlert() {
-        demoAlertIndex = (demoAlertIndex + 1) % 4
-        alertAcknowledged = false
-    }
-
-    /*
-     * Une modification des valeurs réelles autorise une future
-     * réapparition des alertes après acquittement.
-     */
-    Connections {
-        target: canBusViewModel
-
-        function onDataChanged() {
-            if (!root.hasRealAlert && root.demoAlertIndex === 0) {
-                root.alertAcknowledged = false
-            }
-        }
-    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -186,12 +20,8 @@ Rectangle {
 
         spacing: Theme.spacingMedium
 
-        /*
-         * En-tête
-         */
         RowLayout {
             Layout.fillWidth: true
-
             spacing: Theme.spacingMedium
 
             ColumnLayout {
@@ -222,19 +52,24 @@ Rectangle {
             Button {
                 id: testAlertButton
 
-                text: root.demoAlertIndex === 0
-                      ? "Tester une alerte"
-                      : root.demoAlertIndex === 1
-                        ? "Tester batterie"
-                        : root.demoAlertIndex === 2
-                          ? "Tester température"
-                          : "Terminer le test"
+                text: {
+                    switch (canBusViewModel.demo_alert_index) {
+                    case 0:
+                        return "Tester une alerte"
+                    case 1:
+                        return "Tester batterie"
+                    case 2:
+                        return "Tester température"
+                    default:
+                        return "Terminer le test"
+                    }
+                }
 
                 implicitWidth: 170
                 implicitHeight: 38
 
                 onClicked: {
-                    root.selectNextDemoAlert()
+                    canBusViewModel.next_demo_alert()
                 }
 
                 contentItem: Text {
@@ -254,9 +89,11 @@ Rectangle {
                     color: Theme.surfaceAlternative
 
                     border.width: Theme.borderWidth
-                    border.color: root.demoAlertIndex > 0
-                                  ? Theme.warningBorder
-                                  : Theme.borderHover
+
+                    border.color:
+                        canBusViewModel.demo_alert_index > 0
+                        ? Theme.warningBorder
+                        : Theme.borderHover
                 }
             }
 
@@ -291,23 +128,6 @@ Rectangle {
                         color: canBusViewModel.engine_running
                                ? Theme.success
                                : Theme.disconnected
-
-                        SequentialAnimation on opacity {
-                            running: canBusViewModel.engine_running
-                            loops: Animation.Infinite
-
-                            NumberAnimation {
-                                from: 1.0
-                                to: 0.4
-                                duration: 900
-                            }
-
-                            NumberAnimation {
-                                from: 0.4
-                                to: 1.0
-                                duration: 900
-                            }
-                        }
                     }
 
                     Text {
@@ -378,31 +198,24 @@ Rectangle {
             }
         }
 
-        /*
-         * Bandeau d'alerte prioritaire
-         */
         VehicleAlertBanner {
             Layout.fillWidth: true
 
-            active: root.alertActive
-            severity: root.alertSeverity
-            title: root.alertTitle
-            message: root.alertMessage
-            iconText: root.alertIcon
+            active: canBusViewModel.alert_active
+            severity: canBusViewModel.alert_severity
+            title: canBusViewModel.alert_title
+            message: canBusViewModel.alert_message
+            iconText: canBusViewModel.alert_icon
 
             onAcknowledged: {
-                root.alertAcknowledged = true
+                canBusViewModel.acknowledge_current_alert()
             }
         }
 
-        /*
-         * Mesures principales
-         */
         GridLayout {
             Layout.fillWidth: true
 
             columns: 3
-
             columnSpacing: Theme.spacingMedium
             rowSpacing: Theme.spacingMedium
 
@@ -422,10 +235,6 @@ Rectangle {
                           : "Bus CAN déconnecté"
 
                 accentColor: Theme.accent
-
-                valueColor: canBusViewModel.connected
-                            ? Theme.textPrimary
-                            : Theme.textSecondary
             }
 
             InfoCard {
@@ -443,15 +252,12 @@ Rectangle {
                           ? "Moteur en fonctionnement"
                           : "Moteur arrêté"
 
-                accentColor: canBusViewModel.engine_rpm >= 5000
-                             ? Theme.danger
-                             : canBusViewModel.engine_rpm >= 3500
-                               ? Theme.warning
-                               : Theme.accent
-
-                valueColor: canBusViewModel.engine_rpm >= 5000
-                            ? Theme.danger
-                            : Theme.textPrimary
+                accentColor:
+                    canBusViewModel.engine_rpm >= 5000
+                    ? Theme.danger
+                    : canBusViewModel.engine_rpm >= 3500
+                      ? Theme.warning
+                      : Theme.accent
             }
 
             InfoCard {
@@ -491,13 +297,6 @@ Rectangle {
                     : canBusViewModel.coolant_temperature >= 95
                       ? Theme.warning
                       : Theme.success
-
-                valueColor:
-                    canBusViewModel.coolant_temperature >= 105
-                    ? Theme.danger
-                    : canBusViewModel.coolant_temperature >= 95
-                      ? Theme.warning
-                      : Theme.textPrimary
             }
         }
 
@@ -505,7 +304,6 @@ Rectangle {
             Layout.fillWidth: true
 
             columns: 3
-
             columnSpacing: Theme.spacingMedium
             rowSpacing: Theme.spacingMedium
 
@@ -520,23 +318,9 @@ Rectangle {
                             .toFixed(2) + " V"
                        : "-- V"
 
-                subtitle: {
-                    if (!canBusViewModel.connected) {
-                        return "Bus CAN déconnecté"
-                    }
-
-                    if (canBusViewModel.battery_voltage < 11.8) {
-                        return "Tension batterie critique"
-                    }
-
-                    if (canBusViewModel.battery_voltage < 12.3) {
-                        return "Batterie faible"
-                    }
-
-                    return canBusViewModel.engine_running
-                           ? "Alternateur en fonctionnement"
-                           : "Tension au repos"
-                }
+                subtitle: canBusViewModel.engine_running
+                          ? "Alternateur en fonctionnement"
+                          : "Tension au repos"
 
                 accentColor:
                     canBusViewModel.battery_voltage < 11.8
@@ -557,21 +341,11 @@ Rectangle {
                             .toFixed(1) + " %"
                        : "-- %"
 
-                subtitle: {
-                    if (!canBusViewModel.connected) {
-                        return "Bus CAN déconnecté"
-                    }
-
-                    if (canBusViewModel.fuel_level <= 10) {
-                        return "Réserve de carburant"
-                    }
-
-                    if (canBusViewModel.fuel_level <= 20) {
-                        return "Niveau faible"
-                    }
-
-                    return "Niveau suffisant"
-                }
+                subtitle: canBusViewModel.fuel_level <= 10
+                          ? "Réserve de carburant"
+                          : canBusViewModel.fuel_level <= 20
+                            ? "Niveau faible"
+                            : "Niveau suffisant"
 
                 accentColor:
                     canBusViewModel.fuel_level <= 10
@@ -610,9 +384,6 @@ Rectangle {
             }
         }
 
-        /*
-         * Activité CAN récente
-         */
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -631,7 +402,6 @@ Rectangle {
 
                 ColumnLayout {
                     Layout.fillWidth: true
-
                     spacing: Theme.spacingTiny
 
                     Text {
@@ -657,7 +427,6 @@ Rectangle {
                                      : "Segoe UI"
 
                         font.pixelSize: Theme.fontMedium
-                        font.bold: canBusViewModel.connected
                     }
 
                     Text {
@@ -674,33 +443,36 @@ Rectangle {
                 }
 
                 Rectangle {
-                    implicitWidth: activityModeText.implicitWidth + 22
+                    implicitWidth: alertCounterText.implicitWidth + 22
                     implicitHeight: 28
 
                     radius: 14
 
-                    color: canBusViewModel.connected
-                           ? Theme.successBackground
-                           : Theme.surfaceAlternative
+                    color:
+                        canBusViewModel.unacknowledged_alert_count > 0
+                        ? Theme.warningBackground
+                        : Theme.successBackground
 
                     border.width: Theme.borderWidth
 
-                    border.color: canBusViewModel.connected
-                                  ? Theme.successBorder
-                                  : Theme.border
+                    border.color:
+                        canBusViewModel.unacknowledged_alert_count > 0
+                        ? Theme.warningBorder
+                        : Theme.successBorder
 
                     Text {
-                        id: activityModeText
+                        id: alertCounterText
 
                         anchors.centerIn: parent
 
-                        text: canBusViewModel.connected
-                              ? "TEMPS RÉEL"
-                              : "INACTIF"
+                        text:
+                            canBusViewModel.unacknowledged_alert_count
+                            + " ALERTE(S) NON ACQUITTÉE(S)"
 
-                        color: canBusViewModel.connected
-                               ? Theme.success
-                               : Theme.textMuted
+                        color:
+                            canBusViewModel.unacknowledged_alert_count > 0
+                            ? Theme.warning
+                            : Theme.success
 
                         font.family: "Segoe UI"
                         font.pixelSize: Theme.fontTiny
