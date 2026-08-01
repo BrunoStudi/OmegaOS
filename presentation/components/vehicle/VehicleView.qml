@@ -326,40 +326,36 @@ Item {
         id: frontLeftDoor
 
         anchors.right: carBody.left
-        anchors.rightMargin: root.frontLeftDoorOpen ? -2 : -26
+        anchors.rightMargin: -24
 
         anchors.top: carBody.top
-        anchors.topMargin: 181
+        anchors.topMargin: 178
 
-        width: 76
+        width: 36
         height: 118
 
         radius: 18
 
         color: root.frontLeftDoorOpen
-               ? Theme.warningBackground
-               : "#7E8895"
+            ? Theme.warningBackground
+            : "#7E8895"
 
         border.width: root.frontLeftDoorOpen ? 3 : 1
 
         border.color: root.frontLeftDoorOpen
-                      ? Theme.warning
-                      : "#B4BCC6"
+                    ? Theme.warning
+                    : "#B4BCC6"
 
-        transformOrigin: Item.Right
+        // Charnière placée à l’avant et contre la carrosserie.
+        transformOrigin: Item.TopRight
 
-        rotation: root.frontLeftDoorOpen ? -26 : 0
+        // Côté gauche : ouverture vers l’extérieur.
+        rotation: root.frontLeftDoorOpen ? 30 : 0
 
         Behavior on rotation {
             NumberAnimation {
                 duration: Theme.animationNormal
                 easing.type: Easing.OutBack
-            }
-        }
-
-        Behavior on anchors.rightMargin {
-            NumberAnimation {
-                duration: Theme.animationNormal
             }
         }
     }
@@ -371,40 +367,35 @@ Item {
         id: frontRightDoor
 
         anchors.left: carBody.right
-        anchors.leftMargin: root.frontRightDoorOpen ? -2 : -26
+        anchors.leftMargin: -24
 
         anchors.top: carBody.top
-        anchors.topMargin: 181
+        anchors.topMargin: 178
 
-        width: 76
+        width: 36
         height: 118
 
         radius: 18
 
         color: root.frontRightDoorOpen
-               ? Theme.warningBackground
-               : "#7E8895"
+            ? Theme.warningBackground
+            : "#7E8895"
 
         border.width: root.frontRightDoorOpen ? 3 : 1
 
         border.color: root.frontRightDoorOpen
-                      ? Theme.warning
-                      : "#B4BCC6"
+                    ? Theme.warning
+                    : "#B4BCC6"
 
-        transformOrigin: Item.Left
+        transformOrigin: Item.TopLeft
 
-        rotation: root.frontRightDoorOpen ? 26 : 0
+        // Côté droit : rotation opposée.
+        rotation: root.frontRightDoorOpen ? -30 : 0
 
         Behavior on rotation {
             NumberAnimation {
                 duration: Theme.animationNormal
                 easing.type: Easing.OutBack
-            }
-        }
-
-        Behavior on anchors.leftMargin {
-            NumberAnimation {
-                duration: Theme.animationNormal
             }
         }
     }
@@ -416,40 +407,35 @@ Item {
         id: rearLeftDoor
 
         anchors.right: carBody.left
-        anchors.rightMargin: root.rearLeftDoorOpen ? -2 : -26
+        anchors.rightMargin: -24
 
         anchors.top: carBody.top
-        anchors.topMargin: 302
+        anchors.topMargin: 300
 
-        width: 76
+        width: 36
         height: 108
 
         radius: 18
 
         color: root.rearLeftDoorOpen
-               ? Theme.warningBackground
-               : "#727C88"
+            ? Theme.warningBackground
+            : "#727C88"
 
         border.width: root.rearLeftDoorOpen ? 3 : 1
 
         border.color: root.rearLeftDoorOpen
-                      ? Theme.warning
-                      : "#ADB5BF"
+                    ? Theme.warning
+                    : "#ADB5BF"
 
-        transformOrigin: Item.Right
+        // La porte arrière est elle aussi articulée par son bord avant.
+        transformOrigin: Item.TopRight
 
-        rotation: root.rearLeftDoorOpen ? -26 : 0
+        rotation: root.rearLeftDoorOpen ? 30 : 0
 
         Behavior on rotation {
             NumberAnimation {
                 duration: Theme.animationNormal
                 easing.type: Easing.OutBack
-            }
-        }
-
-        Behavior on anchors.rightMargin {
-            NumberAnimation {
-                duration: Theme.animationNormal
             }
         }
     }
@@ -461,40 +447,34 @@ Item {
         id: rearRightDoor
 
         anchors.left: carBody.right
-        anchors.leftMargin: root.rearRightDoorOpen ? -2 : -26
+        anchors.leftMargin: -24
 
         anchors.top: carBody.top
-        anchors.topMargin: 302
+        anchors.topMargin: 300
 
-        width: 76
+        width: 36
         height: 108
 
         radius: 18
 
         color: root.rearRightDoorOpen
-               ? Theme.warningBackground
-               : "#727C88"
+            ? Theme.warningBackground
+            : "#727C88"
 
         border.width: root.rearRightDoorOpen ? 3 : 1
 
         border.color: root.rearRightDoorOpen
-                      ? Theme.warning
-                      : "#ADB5BF"
+                    ? Theme.warning
+                    : "#ADB5BF"
 
-        transformOrigin: Item.Left
+        transformOrigin: Item.TopLeft
 
-        rotation: root.rearRightDoorOpen ? 26 : 0
+        rotation: root.rearRightDoorOpen ? -30 : 0
 
         Behavior on rotation {
             NumberAnimation {
                 duration: Theme.animationNormal
                 easing.type: Easing.OutBack
-            }
-        }
-
-        Behavior on anchors.leftMargin {
-            NumberAnimation {
-                duration: Theme.animationNormal
             }
         }
     }
