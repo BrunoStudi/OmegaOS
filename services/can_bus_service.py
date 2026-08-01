@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import math
 import platform
 import random
 from collections import deque
 from dataclasses import dataclass
 from datetime import datetime
-from time import time
+from time import monotonic, time
 from typing import Any
 
 try:
@@ -62,6 +63,20 @@ class CanFrame:
 
 
 @dataclass(frozen=True, slots=True)
+class SimulatedVehicleState:
+    """
+    État cohérent du véhicule simulé.
+    """
+
+    engine_running: bool
+    engine_rpm: int
+    vehicle_speed: float
+    coolant_temperature: float
+    battery_voltage: float
+    fuel_level: float
+
+
+@dataclass(frozen=True, slots=True)
 class CanBusState:
     """
     Instantané de l'état courant du service CAN.
@@ -71,25 +86,27 @@ class CanBusState:
     mode: str
     interface_name: str
     bitrate: int
+
     frames_received: int
     frames_per_second: int
+
     last_frame: CanFrame | None
     last_update: str
+
     status_message: str
     error_message: str
+
+    engine_running: bool
+    engine_rpm: int
+    vehicle_speed: float
+    coolant_temperature: float
+    battery_voltage: float
+    fuel_level: float
 
 
 class CanBusService:
     """
-    Gère la connexion CAN d'OmegaOS.
-
-    Modes actuellement disponibles :
-
-    - simulation :
-      génère des trames fictives pour le développement ;
-
-    - socketcan :
-      utilise python-can et une interface Linux telle que can0.
+    Gère le bus CAN simulé ou réel d'OmegaOS.
     """
 
     MODE_SIMULATION = "simulation"
@@ -123,6 +140,7 @@ class CanBusService:
 
         self._frames_received = 0
         self._frames_per_second = 0
+
         self._last_frame: CanFrame | None = None
         self._last_update = "--:--:--"
 
@@ -133,14 +151,20 @@ class CanBusService:
             maxlen=history_limit
         )
 
-        self._simulation_frames = (
-            (0x180, b"\x02\x10\x4A\x00\x00\x00\x00\x00"),
-            (0x201, b"\x4F\x10\x00\x8A\x00\x00\x00\x00"),
-            (0x280, b"\x00\x00\x35\x7C\x10\x00\x00\x00"),
-            (0x301, b"\x01\x00\x00\x00\x40\x00\x00\x00"),
-            (0x420, b"\x7A\x01\x00\x00\x00\x00\x00\x00"),
-            (0x5E8, b"\x10\x14\x00\x00\x00\x00\x00\x00"),
+        self._simulation_started_at = monotonic()
+
+        self._vehicle_state = SimulatedVehicleState(
+            engine_running=False,
+            engine_rpm=0,
+            vehicle_speed=0.0,
+            coolant_temperature=20.0,
+            battery_voltage=12.4,
+            fuel_level=72.0,
         )
+
+    @property
+    def connected(self) -> bool:
+        return self._connected
 
     @property
     def mode(self) -> str:
@@ -154,18 +178,7 @@ class CanBusService:
     def bitrate(self) -> int:
         return self._bitrate
 
-    @property
-    def connected(self) -> bool:
-        return self._connected
-
     def set_mode(self, mode: str) -> None:
-        """
-        Change le mode CAN.
-
-        Une connexion active est d'abord fermée afin d'éviter
-        de conserver un bus correspondant à l'ancien mode.
-        """
-
         validated_mode = self._validate_mode(mode)
 
         if validated_mode == self._mode:
@@ -176,6 +189,7 @@ class CanBusService:
 
         self._mode = validated_mode
         self._reset_runtime_information()
+
         self._status_message = (
             f"Mode CAN sélectionné : "
             f"{self.get_display_mode()}"
@@ -199,6 +213,7 @@ class CanBusService:
             self.disconnect()
 
         self._interface_name = cleaned_name
+
         self._status_message = (
             f"Interface sélectionnée : {cleaned_name}"
         )
@@ -215,16 +230,13 @@ class CanBusService:
             self.disconnect()
 
         self._bitrate = validated_bitrate
+
         self._status_message = (
             f"Débit sélectionné : "
             f"{self.get_formatted_bitrate()}"
         )
 
     def connect(self) -> bool:
-        """
-        Connecte le mode actuellement sélectionné.
-        """
-
         if self._connected:
             return True
 
@@ -242,10 +254,6 @@ class CanBusService:
         return False
 
     def disconnect(self) -> None:
-        """
-        Ferme proprement la connexion CAN.
-        """
-
         if self._bus is not None:
             try:
                 self._bus.shutdown()
@@ -258,11 +266,19 @@ class CanBusService:
         self._frames_per_second = 0
         self._status_message = "Bus CAN déconnecté"
 
-    def update(self) -> CanBusState:
-        """
-        Actualise le service puis retourne son état.
-        """
+        if self._mode == self.MODE_SIMULATION:
+            self._vehicle_state = SimulatedVehicleState(
+                engine_running=False,
+                engine_rpm=0,
+                vehicle_speed=0.0,
+                coolant_temperature=(
+                    self._vehicle_state.coolant_temperature
+                ),
+                battery_voltage=12.4,
+                fuel_level=self._vehicle_state.fuel_level,
+            )
 
+    def update(self) -> CanBusState:
         if not self._connected:
             return self.get_state()
 
@@ -279,6 +295,8 @@ class CanBusService:
         return self.get_state()
 
     def get_state(self) -> CanBusState:
+        vehicle = self._vehicle_state
+
         return CanBusState(
             connected=self._connected,
             mode=self._mode,
@@ -290,25 +308,30 @@ class CanBusService:
             last_update=self._last_update,
             status_message=self._status_message,
             error_message=self._error_message,
+            engine_running=vehicle.engine_running,
+            engine_rpm=vehicle.engine_rpm,
+            vehicle_speed=vehicle.vehicle_speed,
+            coolant_temperature=(
+                vehicle.coolant_temperature
+            ),
+            battery_voltage=vehicle.battery_voltage,
+            fuel_level=vehicle.fuel_level,
         )
-
-    def get_last_frame(self) -> CanFrame | None:
-        return self._last_frame
 
     def get_history(self) -> list[CanFrame]:
         """
-        Retourne une copie de l'historique.
-
-        La trame la plus récente est placée en premier.
+        Retourne les trames les plus récentes en premier.
         """
 
         return list(reversed(self._history))
 
     def clear_history(self) -> None:
         self._history.clear()
+
         self._frames_received = 0
         self._frames_per_second = 0
         self._last_frame = None
+
         self._status_message = "Historique CAN effacé"
 
     def get_display_mode(self) -> str:
@@ -319,8 +342,9 @@ class CanBusService:
 
     def get_formatted_bitrate(self) -> str:
         if self._bitrate >= 1_000_000:
-            value = self._bitrate / 1_000_000
-            return f"{value:g} Mbit/s"
+            return (
+                f"{self._bitrate / 1_000_000:g} Mbit/s"
+            )
 
         return f"{self._bitrate // 1000} kbit/s"
 
@@ -332,9 +356,24 @@ class CanBusService:
 
     def _connect_simulation(self) -> bool:
         self._connected = True
+        self._simulation_started_at = monotonic()
+
         self._frames_per_second = 0
+
+        self._vehicle_state = SimulatedVehicleState(
+            engine_running=True,
+            engine_rpm=850,
+            vehicle_speed=0.0,
+            coolant_temperature=max(
+                20.0,
+                self._vehicle_state.coolant_temperature,
+            ),
+            battery_voltage=14.2,
+            fuel_level=self._vehicle_state.fuel_level,
+        )
+
         self._status_message = (
-            "Simulation CAN connectée"
+            "Simulation du véhicule active"
         )
 
         return True
@@ -361,6 +400,7 @@ class CanBusService:
 
         except Exception as error:
             self._bus = None
+
             self._set_error(
                 "Impossible d'ouvrir l'interface "
                 f"{self._interface_name} : {error}"
@@ -369,6 +409,7 @@ class CanBusService:
 
         self._connected = True
         self._frames_per_second = 0
+
         self._status_message = (
             f"SocketCAN connecté sur "
             f"{self._interface_name}"
@@ -377,64 +418,305 @@ class CanBusService:
         return True
 
     def _update_simulation(self) -> None:
-        generated_count = random.randint(15, 80)
+        """
+        Actualise le scénario du véhicule puis génère
+        des trames CAN cohérentes.
+        """
 
-        for _ in range(generated_count):
-            frame = self._generate_simulated_frame()
+        self._update_simulated_vehicle_state()
+
+        generated_count = random.randint(35, 70)
+
+        frame_factories = (
+            self._create_engine_frame,
+            self._create_speed_frame,
+            self._create_temperature_frame,
+            self._create_battery_frame,
+            self._create_fuel_frame,
+        )
+
+        for index in range(generated_count):
+            factory = frame_factories[
+                index % len(frame_factories)
+            ]
+
+            frame = factory()
             self._register_frame(frame)
 
         self._frames_per_second = generated_count
+
         self._status_message = (
-            "Réception CAN simulée active"
+            "Simulation du véhicule active"
         )
 
-    def _generate_simulated_frame(self) -> CanFrame:
-        arbitration_id, base_data = random.choice(
-            self._simulation_frames
+    def _update_simulated_vehicle_state(self) -> None:
+        """
+        Produit un trajet cyclique et cohérent.
+
+        Le scénario alterne :
+        ralenti, accélération, vitesse stabilisée,
+        décélération et arrêt temporaire.
+        """
+
+        elapsed = (
+            monotonic() - self._simulation_started_at
         )
 
-        mutable_data = bytearray(base_data)
+        cycle_duration = 90.0
+        cycle_position = elapsed % cycle_duration
 
-        # Une petite variation permet de simuler un réseau vivant
-        # tout en conservant des trames cohérentes.
-        byte_index = random.randrange(
-            len(mutable_data)
-        )
+        engine_running = True
 
-        if random.random() < 0.35:
-            mutable_data[byte_index] = random.randrange(
-                0,
-                256,
+        if cycle_position < 10.0:
+            speed = 0.0
+            rpm = 850 + int(
+                25 * math.sin(elapsed * 2.0)
             )
 
+        elif cycle_position < 30.0:
+            progress = (
+                cycle_position - 10.0
+            ) / 20.0
+
+            speed = progress * 90.0
+            rpm = int(
+                900
+                + progress * 2600
+                + 180 * math.sin(elapsed * 1.5)
+            )
+
+        elif cycle_position < 55.0:
+            speed = (
+                90.0
+                + 8.0 * math.sin(elapsed / 3.0)
+            )
+
+            rpm = int(
+                2350
+                + 220 * math.sin(elapsed / 2.0)
+            )
+
+        elif cycle_position < 75.0:
+            progress = (
+                cycle_position - 55.0
+            ) / 20.0
+
+            speed = max(
+                0.0,
+                90.0 * (1.0 - progress),
+            )
+
+            rpm = int(
+                900
+                + 1900 * (1.0 - progress)
+            )
+
+        else:
+            speed = 0.0
+            rpm = 850
+
+        current_temperature = (
+            self._vehicle_state.coolant_temperature
+        )
+
+        if current_temperature < 89.0:
+            coolant_temperature = min(
+                89.0,
+                current_temperature + 0.7,
+            )
+        else:
+            coolant_temperature = (
+                89.0
+                + 2.0 * math.sin(elapsed / 8.0)
+            )
+
+        battery_voltage = (
+            14.15
+            + 0.08 * math.sin(elapsed / 4.0)
+        )
+
+        fuel_level = max(
+            0.0,
+            self._vehicle_state.fuel_level - 0.002,
+        )
+
+        self._vehicle_state = SimulatedVehicleState(
+            engine_running=engine_running,
+            engine_rpm=max(0, rpm),
+            vehicle_speed=max(0.0, speed),
+            coolant_temperature=(
+                coolant_temperature
+            ),
+            battery_voltage=battery_voltage,
+            fuel_level=fuel_level,
+        )
+
+    def _create_engine_frame(self) -> CanFrame:
+        """
+        Trame de simulation moteur.
+
+        ID 0x1A0 :
+        octets 0-1 = régime moteur, non signé,
+        ordre big-endian.
+        """
+
+        rpm = self._vehicle_state.engine_rpm
+
+        data = rpm.to_bytes(
+            length=2,
+            byteorder="big",
+            signed=False,
+        ) + bytes(6)
+
+        return self._create_frame(
+            arbitration_id=0x1A0,
+            data=data,
+        )
+
+    def _create_speed_frame(self) -> CanFrame:
+        """
+        ID 0x300 :
+        vitesse encodée en centièmes de km/h.
+        """
+
+        raw_speed = int(
+            self._vehicle_state.vehicle_speed * 100
+        )
+
+        data = raw_speed.to_bytes(
+            length=2,
+            byteorder="big",
+            signed=False,
+        ) + bytes(6)
+
+        return self._create_frame(
+            arbitration_id=0x300,
+            data=data,
+        )
+
+    def _create_temperature_frame(self) -> CanFrame:
+        """
+        ID 0x5C0 :
+        température = valeur brute - 40.
+        """
+
+        raw_temperature = int(
+            self._vehicle_state.coolant_temperature
+            + 40
+        )
+
+        raw_temperature = max(
+            0,
+            min(255, raw_temperature),
+        )
+
+        data = bytes(
+            [
+                raw_temperature,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ]
+        )
+
+        return self._create_frame(
+            arbitration_id=0x5C0,
+            data=data,
+        )
+
+    def _create_battery_frame(self) -> CanFrame:
+        """
+        ID 0x510 :
+        tension en centièmes de volt.
+        """
+
+        raw_voltage = int(
+            self._vehicle_state.battery_voltage * 100
+        )
+
+        data = raw_voltage.to_bytes(
+            length=2,
+            byteorder="big",
+            signed=False,
+        ) + bytes(6)
+
+        return self._create_frame(
+            arbitration_id=0x510,
+            data=data,
+        )
+
+    def _create_fuel_frame(self) -> CanFrame:
+        """
+        ID 0x520 :
+        niveau de carburant sur un octet, de 0 à 100.
+        """
+
+        fuel = int(
+            round(self._vehicle_state.fuel_level)
+        )
+
+        fuel = max(0, min(100, fuel))
+
+        data = bytes(
+            [
+                fuel,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+            ]
+        )
+
+        return self._create_frame(
+            arbitration_id=0x520,
+            data=data,
+        )
+
+    @staticmethod
+    def _create_frame(
+        arbitration_id: int,
+        data: bytes,
+    ) -> CanFrame:
         return CanFrame(
             arbitration_id=arbitration_id,
-            data=bytes(mutable_data),
+            data=data,
             timestamp=time(),
         )
 
     def _update_socketcan(self) -> None:
         if self._bus is None:
             self._set_error(
-                "La connexion SocketCAN n'est plus disponible."
+                "La connexion SocketCAN "
+                "n'est plus disponible."
             )
             return
 
         received_count = 0
 
         try:
-            # Lecture non bloquante. On limite le nombre traité
-            # à chaque cycle afin de ne jamais bloquer l'interface.
             for _ in range(500):
-                message = self._bus.recv(timeout=0.0)
+                message = self._bus.recv(
+                    timeout=0.0
+                )
 
                 if message is None:
                     break
 
                 frame = CanFrame(
-                    arbitration_id=message.arbitration_id,
+                    arbitration_id=(
+                        message.arbitration_id
+                    ),
                     data=bytes(message.data),
-                    timestamp=float(message.timestamp),
+                    timestamp=float(
+                        message.timestamp
+                    ),
                     is_extended=bool(
                         message.is_extended_id
                     ),
@@ -451,11 +733,13 @@ class CanBusService:
 
         except Exception as error:
             self._set_error(
-                f"Erreur de réception SocketCAN : {error}"
+                f"Erreur de réception "
+                f"SocketCAN : {error}"
             )
             return
 
         self._frames_per_second = received_count
+
         self._status_message = (
             f"Réception SocketCAN active sur "
             f"{self._interface_name}"
@@ -489,7 +773,8 @@ class CanBusService:
 
         if normalized_mode not in cls.SUPPORTED_MODES:
             raise ValueError(
-                f"Mode CAN non pris en charge : {mode}"
+                f"Mode CAN non pris en charge : "
+                f"{mode}"
             )
 
         return normalized_mode

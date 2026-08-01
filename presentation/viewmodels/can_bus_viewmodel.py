@@ -47,6 +47,13 @@ class CanBusViewModel(QObject):
         self._last_frame_dlc = 0
         self._last_frame_time = "--:--:--.---"
 
+        self._engine_running = False
+        self._engine_rpm = 0
+        self._vehicle_speed = 0.0
+        self._coolant_temperature = 20.0
+        self._battery_voltage = 12.4
+        self._fuel_level = 72.0
+
         self._history_text = self._empty_history_text()
         self._paused_history_text = self._history_text
 
@@ -267,6 +274,15 @@ class CanBusViewModel(QObject):
                 self._build_history_text()
             )
 
+        self._engine_running = state.engine_running
+        self._engine_rpm = state.engine_rpm
+        self._vehicle_speed = state.vehicle_speed
+        self._coolant_temperature = (
+            state.coolant_temperature
+        )
+        self._battery_voltage = state.battery_voltage
+        self._fuel_level = state.fuel_level
+
         self.dataChanged.emit()
 
     def _build_history_text(self) -> str:
@@ -410,3 +426,27 @@ class CanBusViewModel(QObject):
     @Property(str, notify=dataChanged)
     def error_message(self) -> str:
         return self._error_message
+
+    @Property(bool, notify=dataChanged)
+    def engine_running(self) -> bool:
+        return self._engine_running
+
+    @Property(int, notify=dataChanged)
+    def engine_rpm(self) -> int:
+        return self._engine_rpm
+
+    @Property(float, notify=dataChanged)
+    def vehicle_speed(self) -> float:
+        return self._vehicle_speed
+
+    @Property(float, notify=dataChanged)
+    def coolant_temperature(self) -> float:
+        return self._coolant_temperature
+
+    @Property(float, notify=dataChanged)
+    def battery_voltage(self) -> float:
+        return self._battery_voltage
+
+    @Property(float, notify=dataChanged)
+    def fuel_level(self) -> float:
+        return self._fuel_level
