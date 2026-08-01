@@ -1,19 +1,12 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QLocale, QObject, Signal
-
-try:
-    from PySide6.QtTextToSpeech import QTextToSpeech
-except ImportError:
-    QTextToSpeech = None
+from PySide6.QtTextToSpeech import QTextToSpeech
 
 
 class VoiceService(QObject):
     """
     Gère la synthèse vocale locale d'OmegaOS.
-
-    Le service utilise le moteur vocal fourni par le système
-    d'exploitation par l'intermédiaire de Qt TextToSpeech.
     """
 
     stateChanged = Signal()
@@ -46,91 +39,73 @@ class VoiceService(QObject):
         if self._speech is None:
             return "Indisponible"
 
-        engine = self._speech.engine
-
-        if not engine:
-            return "Moteur système"
-
-        return str(engine)
+        return self._speech.engine() or "Moteur système"
 
     def set_volume(self, volume: float) -> None:
-        """
-        Définit le volume entre 0.0 et 1.0.
-        """
-
         if self._speech is None:
             return
 
-        normalized_volume = max(
-            0.0,
-            min(1.0, float(volume)),
+        self._speech.setVolume(
+            max(0.0, min(1.0, float(volume)))
         )
-
-        self._speech.setVolume(normalized_volume)
 
     def set_rate(self, rate: float) -> None:
-        """
-        Définit la vitesse entre -1.0 et 1.0.
-        """
-
         if self._speech is None:
             return
 
-        normalized_rate = max(
-            -1.0,
-            min(1.0, float(rate)),
+        self._speech.setRate(
+            max(-1.0, min(1.0, float(rate)))
         )
 
-        self._speech.setRate(normalized_rate)
-
     def speak(self, message: str) -> bool:
-        """
-        Prononce un texte immédiatement.
-
-        Retourne False si aucun moteur vocal n'est disponible.
-        """
-
         cleaned_message = message.strip()
 
         if not cleaned_message:
             return False
 
-        if self._speech is None or not self._available:
-            self._status_message = (
-                "Aucun moteur vocal disponible"
+        if self._speech is None:
+            self._set_error(
+                "Le moteur vocal n'est pas initialisé."
             )
-            self.errorOccurred.emit(
-                self._status_message
+            return False
+
+        if (
+            self._speech.state()
+            == QTextToSpeech.State.Error
+        ):
+            self._set_error(
+                self._speech.errorString()
+                or "Le moteur vocal est en erreur."
             )
-            self.stateChanged.emit()
+            return False
+
+        voices = self._speech.availableVoices()
+
+        if not voices:
+            self._set_error(
+                "Aucune voix n'est disponible "
+                "pour la langue sélectionnée."
+            )
             return False
 
         try:
             self._speech.stop()
             self._speech.say(cleaned_message)
 
-            self._status_message = "Annonce en cours"
+            self._status_message = (
+                "Annonce demandée au moteur vocal"
+            )
             self.stateChanged.emit()
 
             return True
 
         except Exception as error:
-            self._status_message = (
+            self._set_error(
                 f"Erreur de synthèse vocale : {error}"
             )
-
-            self.errorOccurred.emit(
-                self._status_message
-            )
-            self.stateChanged.emit()
-
             return False
 
     def stop(self) -> None:
-        """
-        Interrompt l'annonce en cours.
-        """
-
         if self._speech is None:
             return
 
@@ -139,39 +114,17 @@ class VoiceService(QObject):
         self.stateChanged.emit()
 
     def _initialize_engine(self) -> None:
-        if QTextToSpeech is None:
-            self._status_message = (
-                "Le module Qt TextToSpeech est indisponible"
-            )
-            return
-
         try:
             engines = QTextToSpeech.availableEngines()
 
             if not engines:
                 self._status_message = (
-                    "Aucun moteur vocal système détecté"
+                    "Aucun moteur vocal Qt détecté"
                 )
                 return
 
-            self._speech = QTextToSpeech(
-                engines[0],
-                self,
-            )
-
-            french_locale = QLocale(
-                QLocale.Language.French,
-                QLocale.Country.France,
-            )
-
-            available_locales = (
-                self._speech.availableLocales()
-            )
-
-            if french_locale in available_locales:
-                self._speech.setLocale(
-                    french_locale
-                )
+            # Utilise d'abord le moteur par défaut du système.
+            self._speech = QTextToSpeech(self)
 
             self._speech.stateChanged.connect(
                 self._on_speech_state_changed
@@ -181,30 +134,96 @@ class VoiceService(QObject):
                 self._on_speech_error
             )
 
-            self._available = True
-            self._status_message = (
-                "Synthèse vocale disponible"
-            )
+            french_locale = self._find_french_locale()
+
+            if french_locale is not None:
+                self._speech.setLocale(french_locale)
+
+            voices = self._speech.availableVoices()
+
+            if voices:
+                # Sélection explicite de la première voix compatible.
+                self._speech.setVoice(voices[0])
+
+                voice_name = voices[0].name()
+                locale_name = (
+                    self._speech.locale().name()
+                )
+
+                self._status_message = (
+                    f"Voix prête : {voice_name} "
+                    f"({locale_name})"
+                )
+
+                self._available = True
+            else:
+                self._status_message = (
+                    "Moteur détecté, mais aucune voix "
+                    "compatible n'est installée"
+                )
 
         except Exception as error:
             self._speech = None
             self._available = False
+
             self._status_message = (
-                f"Initialisation vocale impossible : {error}"
+                f"Initialisation vocale impossible : "
+                f"{error}"
             )
 
-    def _on_speech_state_changed(self, state) -> None:
+    def _find_french_locale(
+        self,
+    ) -> QLocale | None:
+        if self._speech is None:
+            return None
+
+        available_locales = (
+            self._speech.availableLocales()
+        )
+
+        preferred_locale = QLocale(
+            QLocale.Language.French,
+            QLocale.Country.France,
+        )
+
+        for locale in available_locales:
+            if locale == preferred_locale:
+                return locale
+
+        for locale in available_locales:
+            if (
+                locale.language()
+                == QLocale.Language.French
+            ):
+                return locale
+
+        # En dernier recours, conserve la langue système.
+        if available_locales:
+            return available_locales[0]
+
+        return None
+
+    def _on_speech_state_changed(
+        self,
+        state: QTextToSpeech.State,
+    ) -> None:
         if self._speech is None:
             return
 
         if state == QTextToSpeech.State.Ready:
-            self._status_message = "Synthèse vocale prête"
+            self._status_message = (
+                "Synthèse vocale prête"
+            )
 
         elif state == QTextToSpeech.State.Speaking:
-            self._status_message = "Annonce en cours"
+            self._status_message = (
+                "Annonce en cours"
+            )
 
         elif state == QTextToSpeech.State.Paused:
-            self._status_message = "Annonce en pause"
+            self._status_message = (
+                "Annonce en pause"
+            )
 
         elif state == QTextToSpeech.State.Error:
             self._status_message = (
@@ -219,12 +238,12 @@ class VoiceService(QObject):
         _reason,
         error_string: str,
     ) -> None:
-        self._status_message = (
+        self._set_error(
             error_string
             or "Erreur du moteur vocal"
         )
 
-        self.errorOccurred.emit(
-            self._status_message
-        )
+    def _set_error(self, message: str) -> None:
+        self._status_message = message
+        self.errorOccurred.emit(message)
         self.stateChanged.emit()
