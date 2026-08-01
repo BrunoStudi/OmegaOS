@@ -31,6 +31,7 @@ class CanBusViewModel(QObject):
         )
 
         self._auto_connect = False
+        self._display_paused = False
 
         self._connected = False
         self._mode = CanBusService.MODE_SIMULATION
@@ -46,11 +47,8 @@ class CanBusViewModel(QObject):
         self._last_frame_dlc = 0
         self._last_frame_time = "--:--:--.---"
 
-        self._history_text = (
-            "HEURE         ID           DLC   DONNÉES\n"
-            "--------------------------------------------------------------\n"
-            "Aucune trame CAN enregistrée."
-        )
+        self._history_text = self._empty_history_text()
+        self._paused_history_text = self._history_text
 
         self._last_update = "--:--:--"
         self._status_message = "Bus CAN déconnecté"
@@ -87,6 +85,8 @@ class CanBusViewModel(QObject):
 
         self._service.disconnect()
 
+        self._display_paused = False
+
         self._apply_state(
             self._service.get_state()
         )
@@ -102,6 +102,27 @@ class CanBusViewModel(QObject):
         else:
             self.connect_bus()
 
+    @Slot()
+    def toggle_display_pause(self) -> None:
+        """
+        Fige ou reprend l'affichage de la console CAN.
+
+        La réception des trames continue pendant la pause.
+        """
+
+        if not self._display_paused:
+            self._paused_history_text = (
+                self._build_history_text()
+            )
+            self._display_paused = True
+        else:
+            self._display_paused = False
+            self._history_text = (
+                self._build_history_text()
+            )
+
+        self.dataChanged.emit()
+
     @Slot(str)
     def set_mode(self, mode: str) -> None:
         """
@@ -115,6 +136,8 @@ class CanBusViewModel(QObject):
             self._error_message = str(error)
             self.dataChanged.emit()
             return
+
+        self._display_paused = False
 
         self._apply_state(
             self._service.get_state()
@@ -181,6 +204,11 @@ class CanBusViewModel(QObject):
 
         self._service.clear_history()
 
+        empty_history = self._empty_history_text()
+
+        self._history_text = empty_history
+        self._paused_history_text = empty_history
+
         self._apply_state(
             self._service.get_state()
         )
@@ -234,13 +262,16 @@ class CanBusViewModel(QObject):
                 frame.formatted_time
             )
 
-        self._history_text = self._build_history_text()
+        if not self._display_paused:
+            self._history_text = (
+                self._build_history_text()
+            )
 
         self.dataChanged.emit()
 
     def _build_history_text(self) -> str:
         """
-        Construit une console CAN lisible depuis l'historique du service.
+        Construit la console depuis l'historique du service.
 
         Les trames les plus récentes apparaissent en premier.
         """
@@ -269,6 +300,14 @@ class CanBusViewModel(QObject):
             )
 
         return "\n".join(lines)
+
+    @staticmethod
+    def _empty_history_text() -> str:
+        return (
+            "HEURE         ID           DLC   DONNÉES\n"
+            "--------------------------------------------------------------\n"
+            "Aucune trame CAN enregistrée."
+        )
 
     @Property(bool, notify=dataChanged)
     def connected(self) -> bool:
@@ -313,6 +352,18 @@ class CanBusViewModel(QObject):
     def auto_connect(self) -> bool:
         return self._auto_connect
 
+    @Property(bool, notify=dataChanged)
+    def display_paused(self) -> bool:
+        return self._display_paused
+
+    @Property(str, notify=dataChanged)
+    def display_pause_status(self) -> str:
+        return (
+            "Affichage en pause"
+            if self._display_paused
+            else "Affichage en direct"
+        )
+
     @Property(int, notify=dataChanged)
     def frames_received(self) -> int:
         return self._frames_received
@@ -343,6 +394,9 @@ class CanBusViewModel(QObject):
 
     @Property(str, notify=dataChanged)
     def history_text(self) -> str:
+        if self._display_paused:
+            return self._paused_history_text
+
         return self._history_text
 
     @Property(str, notify=dataChanged)

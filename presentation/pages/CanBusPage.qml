@@ -19,9 +19,6 @@ Rectangle {
 
         spacing: Theme.spacingMedium
 
-        /*
-         * En-tête de la page
-         */
         RowLayout {
             Layout.fillWidth: true
 
@@ -92,9 +89,6 @@ Rectangle {
             }
         }
 
-        /*
-         * Configuration de la connexion CAN
-         */
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 155
@@ -194,8 +188,6 @@ Rectangle {
                         }
 
                         ComboBox {
-                            id: modeComboBox
-
                             Layout.fillWidth: true
                             implicitHeight: 40
 
@@ -237,8 +229,6 @@ Rectangle {
                         }
 
                         ComboBox {
-                            id: interfaceComboBox
-
                             Layout.fillWidth: true
                             implicitHeight: 40
 
@@ -281,8 +271,6 @@ Rectangle {
                         }
 
                         ComboBox {
-                            id: bitrateComboBox
-
                             Layout.fillWidth: true
                             implicitHeight: 40
 
@@ -340,8 +328,6 @@ Rectangle {
                         }
 
                         CheckBox {
-                            id: autoConnectCheckBox
-
                             text: "Activer au démarrage"
 
                             checked:
@@ -359,9 +345,6 @@ Rectangle {
             }
         }
 
-        /*
-         * Message d'erreur de connexion
-         */
         Rectangle {
             visible:
                 canBusViewModel.error_message !== ""
@@ -412,9 +395,6 @@ Rectangle {
             }
         }
 
-        /*
-         * Statistiques principales
-         */
         GridLayout {
             Layout.fillWidth: true
 
@@ -496,9 +476,6 @@ Rectangle {
             }
         }
 
-        /*
-         * Console d'historique CAN
-         */
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -532,9 +509,12 @@ Rectangle {
 
                         Text {
                             text:
-                                "Les 200 dernières trames reçues"
+                                canBusViewModel.display_pause_status
 
-                            color: Theme.textMuted
+                            color:
+                                canBusViewModel.display_paused
+                                ? Theme.warning
+                                : Theme.textMuted
 
                             font.family: "Segoe UI"
                             font.pixelSize: Theme.fontSmall
@@ -577,6 +557,66 @@ Rectangle {
                             font.family: "Segoe UI"
                             font.pixelSize: Theme.fontTiny
                             font.bold: true
+                        }
+                    }
+
+                    Button {
+                        id: pauseButton
+
+                        text:
+                            canBusViewModel.display_paused
+                            ? "Reprendre"
+                            : "Pause"
+
+                        implicitWidth: 105
+                        implicitHeight: 32
+
+                        enabled:
+                            canBusViewModel.connected
+
+                        onClicked: {
+                            canBusViewModel
+                                .toggle_display_pause()
+                        }
+
+                        contentItem: Text {
+                            text: pauseButton.text
+
+                            color:
+                                pauseButton.enabled
+                                ? Theme.textPrimary
+                                : Theme.textDisabled
+
+                            font.family: "Segoe UI"
+                            font.pixelSize:
+                                Theme.fontSmall
+                            font.bold: true
+
+                            horizontalAlignment:
+                                Text.AlignHCenter
+
+                            verticalAlignment:
+                                Text.AlignVCenter
+                        }
+
+                        background: Rectangle {
+                            radius:
+                                Theme.radiusSmall
+
+                            color:
+                                canBusViewModel
+                                    .display_paused
+                                ? Theme.warningBackground
+                                : Theme.accentSoft
+
+                            border.width:
+                                Theme.borderWidth
+
+                            border.color:
+                                canBusViewModel
+                                    .display_paused
+                                ? Theme.warningBorder
+                                : Theme.borderSelected
                         }
                     }
 
@@ -650,26 +690,30 @@ Rectangle {
                     Layout.fillHeight: true
 
                     radius: Theme.radiusSmall
-
                     color: "#030508"
 
                     border.width:
                         Theme.borderWidth
 
                     border.color:
-                        Theme.border
+                        canBusViewModel.display_paused
+                        ? Theme.warningBorder
+                        : Theme.border
+
+                    Behavior on border.color {
+                        ColorAnimation {
+                            duration:
+                                Theme.animationNormal
+                        }
+                    }
 
                     ScrollView {
-                        id: historyScrollView
-
                         anchors.fill: parent
                         anchors.margins: 2
 
                         clip: true
 
                         TextArea {
-                            id: historyTextArea
-
                             text:
                                 canBusViewModel
                                     .history_text
@@ -714,13 +758,16 @@ Rectangle {
 
                     Text {
                         text:
-                            canBusViewModel.connected
-                            ? canBusViewModel
-                                .status_message
-                            : "Configure puis connecte "
-                              + "le bus CAN."
+                            canBusViewModel.display_paused
+                            ? "La réception continue en arrière-plan."
+                            : canBusViewModel.connected
+                              ? canBusViewModel.status_message
+                              : "Configure puis connecte le bus CAN."
 
-                        color: Theme.textSecondary
+                        color:
+                            canBusViewModel.display_paused
+                            ? Theme.warning
+                            : Theme.textSecondary
 
                         font.family: "Segoe UI"
                         font.pixelSize:
