@@ -26,7 +26,9 @@ ApplicationWindow {
 
         TopBar {
             Layout.fillWidth: true
-            Layout.preferredHeight: Theme.topBarHeight
+
+            Layout.preferredHeight:
+                Theme.topBarHeight
 
             applicationName:
                 applicationViewModel.application_name
@@ -92,12 +94,7 @@ ApplicationWindow {
                         }
                 }
 
-                ModulePlaceholder {
-                    title: "Véhicule"
-
-                    description:
-                        "Informations générales "
-                        + "et état du véhicule"
+                VehiclePage {
                 }
 
                 CanBusPage {
