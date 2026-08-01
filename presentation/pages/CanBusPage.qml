@@ -17,8 +17,11 @@ Rectangle {
         anchors.fill: parent
         anchors.margins: Theme.pageMargin
 
-        spacing: Theme.spacingLarge
+        spacing: Theme.spacingMedium
 
+        /*
+         * En-tête de la page
+         */
         RowLayout {
             Layout.fillWidth: true
 
@@ -63,7 +66,6 @@ Rectangle {
 
                 contentItem: Text {
                     text: connectionButton.text
-
                     color: Theme.textPrimary
 
                     font.family: "Segoe UI"
@@ -90,9 +92,12 @@ Rectangle {
             }
         }
 
+        /*
+         * Configuration de la connexion CAN
+         */
         Rectangle {
             Layout.fillWidth: true
-            Layout.preferredHeight: 160
+            Layout.preferredHeight: 155
 
             radius: Theme.radiusMedium
             color: Theme.surface
@@ -111,7 +116,6 @@ Rectangle {
 
                     Text {
                         text: "Connexion CAN"
-
                         color: Theme.textPrimary
 
                         font.family: "Segoe UI"
@@ -124,9 +128,10 @@ Rectangle {
                     }
 
                     Rectangle {
-                        implicitWidth: connectionStatusRow.implicitWidth + 24
-                        implicitHeight: 30
+                        implicitWidth:
+                            connectionStatusRow.implicitWidth + 24
 
+                        implicitHeight: 30
                         radius: 15
 
                         color: canBusViewModel.connected
@@ -156,7 +161,8 @@ Rectangle {
                             }
 
                             Text {
-                                text: canBusViewModel.connection_status
+                                text:
+                                    canBusViewModel.connection_status
 
                                 color: canBusViewModel.connected
                                        ? Theme.success
@@ -193,7 +199,8 @@ Rectangle {
                             Layout.fillWidth: true
                             implicitHeight: 40
 
-                            enabled: !root.configurationLocked
+                            enabled:
+                                !root.configurationLocked
 
                             model: [
                                 "Simulation",
@@ -201,7 +208,8 @@ Rectangle {
                             ]
 
                             currentIndex:
-                                canBusViewModel.mode === "socketcan"
+                                canBusViewModel.mode
+                                === "socketcan"
                                 ? 1
                                 : 0
 
@@ -234,9 +242,10 @@ Rectangle {
                             Layout.fillWidth: true
                             implicitHeight: 40
 
-                            enabled: !root.configurationLocked
-                                     && canBusViewModel.mode
-                                        === "socketcan"
+                            enabled:
+                                !root.configurationLocked
+                                && canBusViewModel.mode
+                                   === "socketcan"
 
                             model: [
                                 "can0",
@@ -250,9 +259,10 @@ Rectangle {
                                 : 0
 
                             onActivated: function(index) {
-                                canBusViewModel.set_interface_name(
-                                    model[index]
-                                )
+                                canBusViewModel
+                                    .set_interface_name(
+                                        model[index]
+                                    )
                             }
                         }
                     }
@@ -276,7 +286,8 @@ Rectangle {
                             Layout.fillWidth: true
                             implicitHeight: 40
 
-                            enabled: !root.configurationLocked
+                            enabled:
+                                !root.configurationLocked
 
                             model: [
                                 "125 kbit/s",
@@ -286,7 +297,9 @@ Rectangle {
                             ]
 
                             currentIndex: {
-                                switch (canBusViewModel.bitrate) {
+                                switch (
+                                    canBusViewModel.bitrate
+                                ) {
                                 case 125000:
                                     return 0
                                 case 250000:
@@ -330,12 +343,15 @@ Rectangle {
                             id: autoConnectCheckBox
 
                             text: "Activer au démarrage"
-                            checked: canBusViewModel.auto_connect
+
+                            checked:
+                                canBusViewModel.auto_connect
 
                             onToggled: {
-                                canBusViewModel.set_auto_connect(
-                                    checked
-                                )
+                                canBusViewModel
+                                    .set_auto_connect(
+                                        checked
+                                    )
                             }
                         }
                     }
@@ -343,11 +359,16 @@ Rectangle {
             }
         }
 
+        /*
+         * Message d'erreur de connexion
+         */
         Rectangle {
-            visible: canBusViewModel.error_message !== ""
+            visible:
+                canBusViewModel.error_message !== ""
 
             Layout.fillWidth: true
-            Layout.preferredHeight: visible ? 48 : 0
+            Layout.preferredHeight:
+                visible ? 48 : 0
 
             radius: Theme.radiusSmall
             color: Theme.dangerBackground
@@ -357,14 +378,17 @@ Rectangle {
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: Theme.spacingMedium
-                anchors.rightMargin: Theme.spacingMedium
+
+                anchors.leftMargin:
+                    Theme.spacingMedium
+
+                anchors.rightMargin:
+                    Theme.spacingMedium
 
                 spacing: Theme.spacingSmall
 
                 Text {
                     text: "!"
-
                     color: Theme.danger
 
                     font.family: "Segoe UI"
@@ -375,7 +399,9 @@ Rectangle {
                 Text {
                     Layout.fillWidth: true
 
-                    text: canBusViewModel.error_message
+                    text:
+                        canBusViewModel.error_message
+
                     color: Theme.danger
 
                     font.family: "Segoe UI"
@@ -386,6 +412,9 @@ Rectangle {
             }
         }
 
+        /*
+         * Statistiques principales
+         */
         GridLayout {
             Layout.fillWidth: true
 
@@ -396,55 +425,80 @@ Rectangle {
 
             InfoCard {
                 Layout.fillWidth: true
+                Layout.preferredHeight: 118
 
                 title: "État"
-                value: canBusViewModel.connection_status
-                subtitle: canBusViewModel.display_mode
+                value:
+                    canBusViewModel.connection_status
 
-                accentColor: canBusViewModel.connected
-                             ? Theme.success
-                             : Theme.disconnected
+                subtitle:
+                    canBusViewModel.display_mode
 
-                valueColor: canBusViewModel.connected
-                            ? Theme.success
-                            : Theme.textSecondary
+                accentColor:
+                    canBusViewModel.connected
+                    ? Theme.success
+                    : Theme.disconnected
+
+                valueColor:
+                    canBusViewModel.connected
+                    ? Theme.success
+                    : Theme.textSecondary
             }
 
             InfoCard {
                 Layout.fillWidth: true
+                Layout.preferredHeight: 118
 
                 title: "Interface"
-                value: canBusViewModel.mode === "simulation"
-                       ? "Simulateur"
-                       : canBusViewModel.interface_name
 
-                subtitle: canBusViewModel.formatted_bitrate
+                value:
+                    canBusViewModel.mode
+                    === "simulation"
+                    ? "Simulateur"
+                    : canBusViewModel.interface_name
+
+                subtitle:
+                    canBusViewModel.formatted_bitrate
+
                 accentColor: Theme.accent
             }
 
             InfoCard {
                 Layout.fillWidth: true
+                Layout.preferredHeight: 118
 
                 title: "Trames reçues"
-                value: canBusViewModel.frames_received.toString()
 
-                subtitle: canBusViewModel.frames_per_second
-                          + " trames/s"
+                value:
+                    canBusViewModel.frames_received
+                        .toString()
+
+                subtitle:
+                    canBusViewModel.frames_per_second
+                    + " trames/s"
 
                 accentColor: Theme.warning
             }
 
             InfoCard {
                 Layout.fillWidth: true
+                Layout.preferredHeight: 118
 
                 title: "Dernière mise à jour"
-                value: canBusViewModel.last_update
-                subtitle: canBusViewModel.status_message
+
+                value:
+                    canBusViewModel.last_update
+
+                subtitle:
+                    canBusViewModel.status_message
 
                 accentColor: Theme.success
             }
         }
 
+        /*
+         * Console d'historique CAN
+         */
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -464,13 +518,27 @@ Rectangle {
                 RowLayout {
                     Layout.fillWidth: true
 
-                    Text {
-                        text: "Dernière trame CAN"
-                        color: Theme.textPrimary
+                    ColumnLayout {
+                        spacing: Theme.spacingTiny
 
-                        font.family: "Segoe UI"
-                        font.pixelSize: Theme.fontLarge
-                        font.bold: true
+                        Text {
+                            text: "Historique des trames"
+                            color: Theme.textPrimary
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontLarge
+                            font.bold: true
+                        }
+
+                        Text {
+                            text:
+                                "Les 200 dernières trames reçues"
+
+                            color: Theme.textMuted
+
+                            font.family: "Segoe UI"
+                            font.pixelSize: Theme.fontSmall
+                        }
                     }
 
                     Item {
@@ -478,22 +546,30 @@ Rectangle {
                     }
 
                     Rectangle {
-                        implicitWidth: modeText.implicitWidth + 22
+                        implicitWidth:
+                            modeText.implicitWidth + 22
+
                         implicitHeight: 28
-
                         radius: 14
-                        color: Theme.warningBackground
 
-                        border.width: Theme.borderWidth
-                        border.color: Theme.warningBorder
+                        color:
+                            Theme.warningBackground
+
+                        border.width:
+                            Theme.borderWidth
+
+                        border.color:
+                            Theme.warningBorder
 
                         Text {
                             id: modeText
 
                             anchors.centerIn: parent
 
-                            text: "MODE "
-                                  + canBusViewModel.display_mode
+                            text:
+                                "MODE "
+                                + canBusViewModel
+                                    .display_mode
                                     .toUpperCase()
 
                             color: Theme.warning
@@ -503,82 +579,170 @@ Rectangle {
                             font.bold: true
                         }
                     }
+
+                    Button {
+                        id: clearHistoryButton
+
+                        text: "Vider"
+
+                        implicitWidth: 90
+                        implicitHeight: 32
+
+                        enabled:
+                            canBusViewModel
+                                .frames_received > 0
+
+                        onClicked: {
+                            canBusViewModel
+                                .clear_history()
+                        }
+
+                        contentItem: Text {
+                            text:
+                                clearHistoryButton.text
+
+                            color:
+                                clearHistoryButton.enabled
+                                ? Theme.textPrimary
+                                : Theme.textDisabled
+
+                            font.family: "Segoe UI"
+                            font.pixelSize:
+                                Theme.fontSmall
+                            font.bold: true
+
+                            horizontalAlignment:
+                                Text.AlignHCenter
+
+                            verticalAlignment:
+                                Text.AlignVCenter
+                        }
+
+                        background: Rectangle {
+                            radius:
+                                Theme.radiusSmall
+
+                            color:
+                                clearHistoryButton.enabled
+                                ? Theme.dangerBackground
+                                : Theme.surfaceAlternative
+
+                            border.width:
+                                Theme.borderWidth
+
+                            border.color:
+                                clearHistoryButton.enabled
+                                ? Theme.dangerBorder
+                                : Theme.border
+                        }
+                    }
                 }
 
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 1
+
                     color: Theme.border
                 }
 
-                Item {
+                Rectangle {
+                    Layout.fillWidth: true
                     Layout.fillHeight: true
-                }
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
+                    radius: Theme.radiusSmall
 
-                    text: canBusViewModel.last_frame
+                    color: "#030508"
 
-                    color: canBusViewModel.connected
-                           ? Theme.accent
-                           : Theme.textMuted
+                    border.width:
+                        Theme.borderWidth
 
-                    font.family: "Consolas"
-                    font.pixelSize: Theme.fontLarge
-                    font.bold: true
+                    border.color:
+                        Theme.border
+
+                    ScrollView {
+                        id: historyScrollView
+
+                        anchors.fill: parent
+                        anchors.margins: 2
+
+                        clip: true
+
+                        TextArea {
+                            id: historyTextArea
+
+                            text:
+                                canBusViewModel
+                                    .history_text
+
+                            readOnly: true
+                            selectByMouse: true
+                            wrapMode: TextEdit.NoWrap
+
+                            color: Theme.textSecondary
+
+                            selectionColor:
+                                Theme.accentSoft
+
+                            selectedTextColor:
+                                Theme.textPrimary
+
+                            font.family: "Consolas"
+                            font.pixelSize:
+                                Theme.fontSmall
+
+                            leftPadding:
+                                Theme.spacingNormal
+
+                            rightPadding:
+                                Theme.spacingNormal
+
+                            topPadding:
+                                Theme.spacingNormal
+
+                            bottomPadding:
+                                Theme.spacingNormal
+
+                            background: Rectangle {
+                                color: "transparent"
+                            }
+                        }
+                    }
                 }
 
                 RowLayout {
-                    Layout.alignment: Qt.AlignHCenter
-                    spacing: Theme.spacingLarge
+                    Layout.fillWidth: true
 
                     Text {
-                        text: "ID : "
-                              + canBusViewModel.last_frame_id
+                        text:
+                            canBusViewModel.connected
+                            ? canBusViewModel
+                                .status_message
+                            : "Configure puis connecte "
+                              + "le bus CAN."
 
                         color: Theme.textSecondary
 
-                        font.family: "Consolas"
-                        font.pixelSize: Theme.fontSmall
+                        font.family: "Segoe UI"
+                        font.pixelSize:
+                            Theme.fontSmall
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
                     }
 
                     Text {
-                        text: "DLC : "
-                              + canBusViewModel.last_frame_dlc
+                        text:
+                            canBusViewModel
+                                .frames_received
+                            + " trames reçues"
 
-                        color: Theme.textSecondary
+                        color: Theme.textMuted
 
-                        font.family: "Consolas"
-                        font.pixelSize: Theme.fontSmall
+                        font.family: "Segoe UI"
+                        font.pixelSize:
+                            Theme.fontSmall
                     }
-
-                    Text {
-                        text: "Heure : "
-                              + canBusViewModel.last_frame_time
-
-                        color: Theme.textSecondary
-
-                        font.family: "Consolas"
-                        font.pixelSize: Theme.fontSmall
-                    }
-                }
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-
-                    text: canBusViewModel.connected
-                          ? canBusViewModel.status_message
-                          : "Configure puis connecte le bus CAN."
-
-                    color: Theme.textSecondary
-
-                    font.family: "Segoe UI"
-                    font.pixelSize: Theme.fontNormal
-                }
-
-                Item {
-                    Layout.fillHeight: true
                 }
             }
         }
