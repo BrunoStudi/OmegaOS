@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 
 import "../components"
@@ -9,9 +10,175 @@ Rectangle {
 
     property string statusMessage: "Système initialisé"
 
+    /*
+     * 0 : aucune alerte forcée
+     * 1 : carburant faible
+     * 2 : batterie faible
+     * 3 : température élevée
+     */
+    property int demoAlertIndex: 0
+
+    /*
+     * Permet d'acquitter visuellement une alerte.
+     * Une nouvelle variation de l'état véhicule la réactivera plus tard
+     * lorsque nous connecterons un véritable gestionnaire d'alertes.
+     */
+    property bool alertAcknowledged: false
+
     signal pageRequested(int pageIndex)
 
     color: Theme.background
+
+    readonly property bool realTemperatureAlert:
+        canBusViewModel.connected
+        && canBusViewModel.coolant_temperature >= 95
+
+    readonly property bool realBatteryAlert:
+        canBusViewModel.connected
+        && canBusViewModel.battery_voltage < 12.3
+
+    readonly property bool realFuelAlert:
+        canBusViewModel.connected
+        && canBusViewModel.fuel_level <= 20
+
+    readonly property bool hasRealAlert:
+        realTemperatureAlert
+        || realBatteryAlert
+        || realFuelAlert
+
+    readonly property bool hasDemoAlert:
+        demoAlertIndex > 0
+
+    readonly property bool alertActive:
+        !alertAcknowledged
+        && (hasRealAlert || hasDemoAlert)
+
+    readonly property string alertSeverity: {
+        if (demoAlertIndex === 3) {
+            return "critical"
+        }
+
+        if (demoAlertIndex === 2) {
+            return "critical"
+        }
+
+        if (demoAlertIndex === 1) {
+            return "warning"
+        }
+
+        if (realTemperatureAlert
+                && canBusViewModel.coolant_temperature >= 105) {
+            return "critical"
+        }
+
+        if (realBatteryAlert
+                && canBusViewModel.battery_voltage < 11.8) {
+            return "critical"
+        }
+
+        return alertActive ? "warning" : "info"
+    }
+
+    readonly property string alertTitle: {
+        if (demoAlertIndex === 3) {
+            return "Température moteur élevée"
+        }
+
+        if (demoAlertIndex === 2) {
+            return "Tension batterie critique"
+        }
+
+        if (demoAlertIndex === 1) {
+            return "Niveau de carburant faible"
+        }
+
+        if (realTemperatureAlert) {
+            return "Température moteur élevée"
+        }
+
+        if (realBatteryAlert) {
+            return "Tension batterie faible"
+        }
+
+        if (realFuelAlert) {
+            return "Niveau de carburant faible"
+        }
+
+        return "Système opérationnel"
+    }
+
+    readonly property string alertMessage: {
+        if (demoAlertIndex === 3) {
+            return "La température moteur a dépassé 105 °C. "
+                   + "Arrêtez le véhicule dès que possible."
+        }
+
+        if (demoAlertIndex === 2) {
+            return "La tension est inférieure à 11,8 V. "
+                   + "Vérifiez la batterie et le circuit de charge."
+        }
+
+        if (demoAlertIndex === 1) {
+            return "Le niveau de carburant est inférieur à 10 %. "
+                   + "Un ravitaillement est conseillé."
+        }
+
+        if (realTemperatureAlert) {
+            return "Température mesurée : "
+                   + canBusViewModel.coolant_temperature.toFixed(1)
+                   + " °C."
+        }
+
+        if (realBatteryAlert) {
+            return "Tension mesurée : "
+                   + canBusViewModel.battery_voltage.toFixed(2)
+                   + " V."
+        }
+
+        if (realFuelAlert) {
+            return "Carburant restant : "
+                   + canBusViewModel.fuel_level.toFixed(1)
+                   + " %."
+        }
+
+        return "Aucune alerte active. Tous les systèmes "
+               + "fonctionnent normalement."
+    }
+
+    readonly property string alertIcon: {
+        if (!alertActive) {
+            return "✓"
+        }
+
+        if (demoAlertIndex === 1 || realFuelAlert) {
+            return "⛽"
+        }
+
+        if (demoAlertIndex === 2 || realBatteryAlert) {
+            return "⚡"
+        }
+
+        return "!"
+    }
+
+    function selectNextDemoAlert() {
+        demoAlertIndex = (demoAlertIndex + 1) % 4
+        alertAcknowledged = false
+    }
+
+    /*
+     * Une modification des valeurs réelles autorise une future
+     * réapparition des alertes après acquittement.
+     */
+    Connections {
+        target: canBusViewModel
+
+        function onDataChanged() {
+            if (!root.hasRealAlert && root.demoAlertIndex === 0) {
+                root.alertAcknowledged = false
+            }
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -20,7 +187,7 @@ Rectangle {
         spacing: Theme.spacingMedium
 
         /*
-         * En-tête du tableau de bord
+         * En-tête
          */
         RowLayout {
             Layout.fillWidth: true
@@ -32,7 +199,6 @@ Rectangle {
 
                 Text {
                     text: "Tableau de bord"
-
                     color: Theme.textPrimary
 
                     font.family: "Segoe UI"
@@ -42,7 +208,6 @@ Rectangle {
 
                 Text {
                     text: "Données générales du véhicule et du système"
-
                     color: Theme.textSecondary
 
                     font.family: "Segoe UI"
@@ -54,9 +219,47 @@ Rectangle {
                 Layout.fillWidth: true
             }
 
-            /*
-             * État du moteur
-             */
+            Button {
+                id: testAlertButton
+
+                text: root.demoAlertIndex === 0
+                      ? "Tester une alerte"
+                      : root.demoAlertIndex === 1
+                        ? "Tester batterie"
+                        : root.demoAlertIndex === 2
+                          ? "Tester température"
+                          : "Terminer le test"
+
+                implicitWidth: 170
+                implicitHeight: 38
+
+                onClicked: {
+                    root.selectNextDemoAlert()
+                }
+
+                contentItem: Text {
+                    text: testAlertButton.text
+                    color: Theme.textPrimary
+
+                    font.family: "Segoe UI"
+                    font.pixelSize: Theme.fontSmall
+                    font.bold: true
+
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                background: Rectangle {
+                    radius: Theme.radiusSmall
+                    color: Theme.surfaceAlternative
+
+                    border.width: Theme.borderWidth
+                    border.color: root.demoAlertIndex > 0
+                                  ? Theme.warningBorder
+                                  : Theme.borderHover
+                }
+            }
+
             Rectangle {
                 implicitWidth: engineStatusRow.implicitWidth + 28
                 implicitHeight: 38
@@ -77,7 +280,6 @@ Rectangle {
                     id: engineStatusRow
 
                     anchors.centerIn: parent
-
                     spacing: Theme.spacingSmall
 
                     Rectangle {
@@ -124,9 +326,6 @@ Rectangle {
                 }
             }
 
-            /*
-             * État du CAN
-             */
             Rectangle {
                 implicitWidth: canStatusRow.implicitWidth + 28
                 implicitHeight: 38
@@ -147,7 +346,6 @@ Rectangle {
                     id: canStatusRow
 
                     anchors.centerIn: parent
-
                     spacing: Theme.spacingSmall
 
                     Rectangle {
@@ -181,8 +379,24 @@ Rectangle {
         }
 
         /*
-         * Première rangée :
-         * vitesse, régime et température moteur
+         * Bandeau d'alerte prioritaire
+         */
+        VehicleAlertBanner {
+            Layout.fillWidth: true
+
+            active: root.alertActive
+            severity: root.alertSeverity
+            title: root.alertTitle
+            message: root.alertMessage
+            iconText: root.alertIcon
+
+            onAcknowledged: {
+                root.alertAcknowledged = true
+            }
+        }
+
+        /*
+         * Mesures principales
          */
         GridLayout {
             Layout.fillWidth: true
@@ -194,7 +408,7 @@ Rectangle {
 
             InfoCard {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 135
+                Layout.preferredHeight: 128
 
                 title: "VITESSE"
 
@@ -216,7 +430,7 @@ Rectangle {
 
             InfoCard {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 135
+                Layout.preferredHeight: 128
 
                 title: "RÉGIME MOTEUR"
 
@@ -242,7 +456,7 @@ Rectangle {
 
             InfoCard {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 135
+                Layout.preferredHeight: 128
 
                 title: "TEMPÉRATURE MOTEUR"
 
@@ -287,10 +501,6 @@ Rectangle {
             }
         }
 
-        /*
-         * Deuxième rangée :
-         * batterie, carburant et état du réseau CAN
-         */
         GridLayout {
             Layout.fillWidth: true
 
@@ -301,7 +511,7 @@ Rectangle {
 
             InfoCard {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 122
+                Layout.preferredHeight: 116
 
                 title: "TENSION BATTERIE"
 
@@ -323,11 +533,9 @@ Rectangle {
                         return "Batterie faible"
                     }
 
-                    if (canBusViewModel.engine_running) {
-                        return "Alternateur en fonctionnement"
-                    }
-
-                    return "Tension au repos"
+                    return canBusViewModel.engine_running
+                           ? "Alternateur en fonctionnement"
+                           : "Tension au repos"
                 }
 
                 accentColor:
@@ -336,16 +544,11 @@ Rectangle {
                     : canBusViewModel.battery_voltage < 12.3
                       ? Theme.warning
                       : Theme.success
-
-                valueColor:
-                    canBusViewModel.battery_voltage < 11.8
-                    ? Theme.danger
-                    : Theme.textPrimary
             }
 
             InfoCard {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 122
+                Layout.preferredHeight: 116
 
                 title: "CARBURANT"
 
@@ -376,19 +579,13 @@ Rectangle {
                     : canBusViewModel.fuel_level <= 20
                       ? Theme.warning
                       : Theme.accent
-
-                valueColor:
-                    canBusViewModel.fuel_level <= 10
-                    ? Theme.danger
-                    : Theme.textPrimary
             }
 
             InfoCard {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 122
+                Layout.preferredHeight: 116
 
                 title: "RÉSEAU CAN"
-
                 value: canBusViewModel.connection_status
 
                 subtitle: canBusViewModel.connected
@@ -414,7 +611,7 @@ Rectangle {
         }
 
         /*
-         * Zone d'activité récente
+         * Activité CAN récente
          */
         Rectangle {
             Layout.fillWidth: true
@@ -426,127 +623,89 @@ Rectangle {
             border.width: Theme.borderWidth
             border.color: Theme.border
 
-            ColumnLayout {
+            RowLayout {
                 anchors.fill: parent
                 anchors.margins: Theme.spacingLarge
 
-                spacing: Theme.spacingNormal
+                spacing: Theme.spacingMedium
 
-                RowLayout {
+                ColumnLayout {
                     Layout.fillWidth: true
 
-                    ColumnLayout {
-                        spacing: Theme.spacingTiny
+                    spacing: Theme.spacingTiny
 
-                        Text {
-                            text: "Activité récente"
+                    Text {
+                        text: "Activité récente"
+                        color: Theme.textPrimary
 
-                            color: Theme.textPrimary
-
-                            font.family: "Segoe UI"
-                            font.pixelSize: Theme.fontLarge
-                            font.bold: true
-                        }
-
-                        Text {
-                            text: canBusViewModel.connected
-                                  ? canBusViewModel.frames_received
-                                    + " trames reçues depuis la connexion"
-                                  : "Aucune activité CAN"
-
-                            color: Theme.textMuted
-
-                            font.family: "Segoe UI"
-                            font.pixelSize: Theme.fontSmall
-                        }
+                        font.family: "Segoe UI"
+                        font.pixelSize: Theme.fontLarge
+                        font.bold: true
                     }
 
-                    Item {
-                        Layout.fillWidth: true
-                    }
-
-                    Rectangle {
-                        implicitWidth: activityModeText.implicitWidth + 22
-                        implicitHeight: 28
-
-                        radius: 14
+                    Text {
+                        text: canBusViewModel.connected
+                              ? canBusViewModel.last_frame
+                              : "Connecte le bus CAN pour recevoir les données."
 
                         color: canBusViewModel.connected
-                               ? Theme.successBackground
-                               : Theme.surfaceAlternative
+                               ? Theme.accent
+                               : Theme.textSecondary
 
-                        border.width: Theme.borderWidth
+                        font.family: canBusViewModel.connected
+                                     ? "Consolas"
+                                     : "Segoe UI"
 
-                        border.color: canBusViewModel.connected
-                                      ? Theme.successBorder
-                                      : Theme.border
+                        font.pixelSize: Theme.fontMedium
+                        font.bold: canBusViewModel.connected
+                    }
 
-                        Text {
-                            id: activityModeText
+                    Text {
+                        text: canBusViewModel.connected
+                              ? canBusViewModel.frames_received
+                                + " trames reçues depuis la connexion"
+                              : "Le simulateur reproduira un trajet complet."
 
-                            anchors.centerIn: parent
+                        color: Theme.textMuted
 
-                            text: canBusViewModel.connected
-                                  ? "TEMPS RÉEL"
-                                  : "INACTIF"
-
-                            color: canBusViewModel.connected
-                                   ? Theme.success
-                                   : Theme.textMuted
-
-                            font.family: "Segoe UI"
-                            font.pixelSize: Theme.fontTiny
-                            font.bold: true
-                        }
+                        font.family: "Segoe UI"
+                        font.pixelSize: Theme.fontSmall
                     }
                 }
 
                 Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 1
+                    implicitWidth: activityModeText.implicitWidth + 22
+                    implicitHeight: 28
 
-                    color: Theme.border
-                }
-
-                Item {
-                    Layout.fillHeight: true
-                }
-
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
-
-                    text: canBusViewModel.connected
-                          ? canBusViewModel.last_frame
-                          : "Connecte le bus CAN pour recevoir les données."
+                    radius: 14
 
                     color: canBusViewModel.connected
-                           ? Theme.accent
-                           : Theme.textSecondary
+                           ? Theme.successBackground
+                           : Theme.surfaceAlternative
 
-                    font.family: canBusViewModel.connected
-                                 ? "Consolas"
-                                 : "Segoe UI"
+                    border.width: Theme.borderWidth
 
-                    font.pixelSize: Theme.fontMedium
-                    font.bold: canBusViewModel.connected
-                }
+                    border.color: canBusViewModel.connected
+                                  ? Theme.successBorder
+                                  : Theme.border
 
-                Text {
-                    Layout.alignment: Qt.AlignHCenter
+                    Text {
+                        id: activityModeText
 
-                    text: canBusViewModel.connected
-                          ? "Dernière trame reçue à "
-                            + canBusViewModel.last_frame_time
-                          : "Le simulateur reproduira un trajet complet."
+                        anchors.centerIn: parent
 
-                    color: Theme.textMuted
+                        text: canBusViewModel.connected
+                              ? "TEMPS RÉEL"
+                              : "INACTIF"
 
-                    font.family: "Segoe UI"
-                    font.pixelSize: Theme.fontNormal
-                }
+                        color: canBusViewModel.connected
+                               ? Theme.success
+                               : Theme.textMuted
 
-                Item {
-                    Layout.fillHeight: true
+                        font.family: "Segoe UI"
+                        font.pixelSize: Theme.fontTiny
+                        font.bold: true
+                    }
                 }
             }
         }
